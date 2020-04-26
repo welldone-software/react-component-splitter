@@ -62,6 +62,7 @@
 		"eslint-plugin-react": "^7.19.0",
 		"eslint-plugin-unused-imports": "^0.1.2",
 		"fs": "^0.0.1-security",
-		"path": "^0.12.7"
+		"path": "^0.12.7",
+		"vsce": "^1.75.0"
 	}
 }

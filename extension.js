@@ -3,61 +3,63 @@ const vscode = require('vscode');
 const {
 	getSelectedCode,
 	validateSelectedCode,
-	getSubComponentName,
-	generateSubComponentCode,
-	createSubComponent,
 	replaceOriginalCode,
+} = require('./utils/selectedComponentUtils');
+const {
+	getSubComponentNameFromUser,
+	generateSubComponentCode,
+	createSubComponentFile,
 	addMissingImportsToSubComponent,
-} = require('./utils');
+} = require('./utils/subComponentUtils');
 
 const activate = context => {
 	const disposable = vscode.commands.registerCommand(
 		'react-component-splitter.split',
 		async () => {	
-			// GET EDITOR
+			/* Gets editor */
 			const editor = vscode.window.activeTextEditor;
 			if (!editor) {
 				vscode.window.showInformationMessage('Editor does not exist');
 				return;
 			}
-			// GET SELECTED CODE
+			/* Gets selected code */
 			const selectedCode = getSelectedCode(editor);
 			if (!selectedCode) {
 				vscode.window.showInformationMessage('Please select code first');
 				return;
 			}
-			// VALIDATE SELECTED CODE
+			/* Validates selected code */
 			const validateSelectedCodeError = await validateSelectedCode(selectedCode);
 			if (validateSelectedCodeError) {
 				vscode.window.showErrorMessage(validateSelectedCodeError);
 				return;
 			}
-			// GET SUBCOMPONENT NAME FROM USER
+			/* Gets sub-component name from user */
 			const folderPath = editor.document.uri.path.replace(/[^\/]+$/, '');
-			const {subComponentName, getSubComponentNameError} = await getSubComponentName({folderPath});
+			const {subComponentName, getSubComponentNameError} = await getSubComponentNameFromUser({folderPath});
 			if (getSubComponentNameError) {
 				vscode.window.showErrorMessage(getSubComponentNameError);
 				return;
 			}
-			// GENERATE SUBCOMPONENT CODE
+			/* Generates sub-component code */
 			const {subComponentCode, subComponentImports, subComponentProps, generateSubComponentCodeError} = await generateSubComponentCode({editor, selectedCode, subComponentName});
 			if (generateSubComponentCodeError) {
 				vscode.window.showErrorMessage(generateSubComponentCodeError);
 				return;
 			}
-			// CREATE SUBCOMPONENT
-			const {subComponentPath, createSubComponentError} = await createSubComponent({name: `${subComponentName}.js`, code: subComponentCode, folderPath});
+			/* Creates sub-component file */
+			const {subComponentPath, createSubComponentError} = await createSubComponentFile({name: `${subComponentName}.js`, code: subComponentCode, folderPath});
 			if (createSubComponentError) {
 				vscode.window.showErrorMessage(createSubComponentError);
 				return;
 			}
-			// REPLACE ORIGINAL CODE
+			/* Replaces original code with new sub-component tag */
 			const {missingSubComponentImports, replaceOriginalCodeError} = await replaceOriginalCode({editor, subComponentName, subComponentImports, subComponentProps});
 			if (replaceOriginalCodeError) {
 				vscode.window.showErrorMessage(replaceOriginalCodeError);
 				return;
 			}
-			// ADD MISSING SUBCOMPONENT IMPORTS
+			/* Adds missing imports to sub-component */
 			const addMissingImportsToSubComponentError = await addMissingImportsToSubComponent({subComponentPath, subComponentCode, missingSubComponentImports});
 			if (addMissingImportsToSubComponentError) {
 				vscode.window.showErrorMessage(addMissingImportsToSubComponentError);
