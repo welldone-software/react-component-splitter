@@ -109,7 +109,7 @@ const removeUnusedImports = async editor => {
 };
 
 const replaceOriginalCode = async (editor, subComponentName, subComponentProps) => {
-	await replaceSelectedCodeWithSubComponentElement(editor, subComponentName, subComponentProps);
+    await replaceSelectedCodeWithSubComponentElement(editor, subComponentName, subComponentProps);
     await addSubComponentImport(editor, subComponentName);
     await removeUnusedImports(editor);
 };
@@ -118,7 +118,7 @@ module.exports = {
     getSelectedCode,
     validateSelectedCode,
     generateSubComponentElement,
-	getLineIndexForNewImports,
+    getLineIndexForNewImports,
     getLinterResultsForUnusedImports,
     replaceOriginalCode,
 };

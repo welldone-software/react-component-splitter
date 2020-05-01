@@ -1,4 +1,3 @@
-// @ts-nocheck
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
@@ -208,7 +207,7 @@ const createSubComponentFile = async (code, subComponentPath) => {
 };
 
 module.exports = {
-    getSubComponentNameFromUser,
-    generateSubComponentCode,
-    createSubComponentFile,
+	getSubComponentNameFromUser,
+	generateSubComponentCode,
+	createSubComponentFile,
 };
