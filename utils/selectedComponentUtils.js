@@ -1,5 +1,4 @@
 
-// @ts-nocheck
 const vscode = require('vscode');
 const eslint = require('eslint');
 const babel = require("@babel/core");
