@@ -1,11 +1,11 @@
 
 const vscode = require('vscode');
-const eslint = require('eslint');
 const babel = require("@babel/core");
 const babelPresetReact = require('@babel/preset-react');
-const {parseForESLint} = require('babel-eslint');
-const eslintPluginReact = require('eslint-plugin-react');
-const eslintPluginUnusedImports = require('eslint-plugin-unused-imports');
+const {
+    getLinterResultsForUnusedImports,
+    extractEntityNameFromLinterResult,
+} = require('./linterUtils');
 
 const getSelectedCode = editor => {
 	const selectedCode = editor.document.getText(editor.selection);
@@ -66,34 +66,12 @@ const addSubComponentImport = async (editor, subComponentName) => {
     });
 };
 
-const getLinterResultsForUnusedImports = code => {
-    const linter = new eslint.Linter();	
-    linter.defineRule('react/jsx-uses-react', eslintPluginReact.rules['jsx-uses-react']);
-    linter.defineRule('react/jsx-uses-vars', eslintPluginReact.rules['jsx-uses-vars']);
-    linter.defineRule('unused-imports/no-unused-imports', eslintPluginUnusedImports.rules['no-unused-imports']);
-
-    return linter.verify(code, {
-        parser: parseForESLint,
-        parserOptions: {
-            ecmaFeatures: {
-            jsx: true,
-            },
-            ecmaVersion: 2015,
-            sourceType: 'module',
-        },
-        rules: {
-            'react/jsx-uses-react': 1,
-            'react/jsx-uses-vars': 1,
-            'unused-imports/no-unused-imports': 1,
-        },
-    });
-};
-
 const removeUnusedImports = async editor => {
     await editor.edit(async edit => {
         const linterResults = getLinterResultsForUnusedImports(editor.document.getText());
+        
         linterResults.forEach(linterResult => {
-            const unusedImport = linterResult.message.replace(/^[^']*'(?<unusedImportGroup>[^']+)'.*/, '$<unusedImportGroup>');
+            const unusedImport = extractEntityNameFromLinterResult(linterResult);
             const codeLine = editor.document.lineAt(linterResult.line - 1);
             const codeLineText = codeLine.text;
             const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImport}\\s+from\\s+.*$`, 'g');
@@ -121,6 +99,5 @@ module.exports = {
     validateSelectedCode,
     generateSubComponentElement,
     getLineIndexForNewImports,
-    getLinterResultsForUnusedImports,
     replaceOriginalCode,
 };

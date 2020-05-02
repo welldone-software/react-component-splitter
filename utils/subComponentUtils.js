@@ -1,12 +1,14 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
-const eslint = require('eslint');
-const {parseForESLint} = require('babel-eslint');
+const {
+	getUndefinedVarsFromCode,
+	getLinterResultsForUnusedImports,
+	extractEntityNameFromLinterResult,
+} = require('./linterUtils');
 const {
 	generateSubComponentElement,
 	getLineIndexForNewImports,
-	getLinterResultsForUnusedImports,
 } = require('./selectedComponentUtils');
 
 const getSubComponentNameFromUser = async folderPath => {
@@ -67,41 +69,22 @@ const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [],
 	return `${importsString}\nconst ${subComponentName} = (${propsString}) => (\n\t${jsx}\n);\n\nexport default ${subComponentName};\n`;
 }
 
-const getUndefinedVarsFromCode = code => {
-	const linter = new eslint.Linter();	
-	const linterResults = linter.verify(code, {
-		parser: parseForESLint,
-		parserOptions: {
-			ecmaFeatures: {
-			  jsx: true,
-			},
-			ecmaVersion: 2015,
-			sourceType: 'module',
-		},
-		rules: {
-			'no-undef': 'error',
-		},
-	});
-	const undefinedVars = linterResults.map(({message}) => message.replace(/^[^']*'(?<undefinedVarGroup>[^']+)'.*/, '$<undefinedVarGroup>'));
-	return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
-};
-
 const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
-	return undefinedVars.reduce((res, prop) => {
-		const importMatch = code.match(`import\\s+({?)(\\s*\\w\\s*,)*\\s*${prop}\\s*(,?\\s*\\w\\s*)*,?\\s*(}?)\\s*from\\s*([^\\n;]*)[\\n|;]`);
-		const isDefaultTypeImport = importMatch && importMatch[1] === '' && importMatch[4] === '';
+	return undefinedVars.reduce((res, undefinedVar) => {
+		const importMatch = code.match(`import\\s+(?<leftBrace>{?)[\\s*\\w\\s*,]*\\s*${undefinedVar}\\s*[,?\\s*\\w\\s*]*,?\\s*(?<rightBrace>}?)\\s*from\\s*(?<importLocation>[^\\n;]*)[\\n|;]`);
+		const isDefaultTypeImport = importMatch && importMatch.groups.leftBrace === '' && importMatch.groups.rightBrace === '';
 		
 		if (!importMatch) {
 			return {
 				...res,
-				subComponentProps: [...res.subComponentProps, prop],
+				subComponentProps: [...res.subComponentProps, undefinedVar],
 			};
 		}
 		return {
 			...res,
 			subComponentImports: [
 				...res.subComponentImports,
-				`import ${isDefaultTypeImport ? prop : `{${prop}}`} from ${importMatch[5].replace(/"/, "'")};`,
+				`import ${isDefaultTypeImport ? undefinedVar : `{${undefinedVar}}`} from ${importMatch.groups.importLocation.replace(/"/, "'")};`,
 			]
 		};
 	}, {subComponentProps: [], subComponentImports: []});
@@ -142,8 +125,7 @@ const getUnusedImportsFromCode = code => {
 	const linterResults = getLinterResultsForUnusedImports(code);
 	
 	linterResults.forEach(linterResult => {
-
-		const unusedImport = linterResult.message.replace(/^[^']*'(?<unsuedImportGroup>[^']+)'.*/, '$<unsuedImportGroup>');
+		const unusedImport = extractEntityNameFromLinterResult(linterResult);
 		const codeStartingAtImport = [...codeLines].slice(linterResult.line - 1).join('\n');
 		let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
 		importLocation = importLocation.substring(
