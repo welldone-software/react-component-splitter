@@ -45,8 +45,10 @@ const getLinterResultsForUnusedImports = code => {
     });
 };
 
-const extractEntityNameFromLinterResult = linterResult =>
-    linterResult.message.replace(/^[^']*'(?<entityName>[^']+)'.*/, '$<entityName>');
+const extractEntityNameFromLinterResult = linterResult => {
+    const entityNameMatch = linterResult.message.match(/^[^']*'(?<entityName>[^']+)'.*/);
+    return entityNameMatch && entityNameMatch.groups.entityName;
+}
 
 module.exports = {
 	getUndefinedVarsFromCode,
