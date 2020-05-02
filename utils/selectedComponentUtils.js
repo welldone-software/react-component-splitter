@@ -53,14 +53,16 @@ const getLineIndexForNewImports = code => {
     const codeLines = code.split('\n');
     const firstImportLineIndex = codeLines.findIndex(codeLine => codeLine.match(/^\s*import /));
     const codeLinesFromFirstImport = firstImportLineIndex > -1 ? [...codeLines].splice(firstImportLineIndex) : codeLines;
-    return codeLinesFromFirstImport.findIndex(codeLine => codeLine.match(/^\s*[^i]/)) - 1;
+    const indexOfFirstNonImportLine = codeLinesFromFirstImport.findIndex(codeLine => codeLine.match(/^\s*[^i]/)) - 1;
+    return Math.max(indexOfFirstNonImportLine, 0);
 };
 
 const addSubComponentImport = async (editor, subComponentName) => {
     await editor.edit(async edit => {
         const originalCode = editor.document.getText();
         const newImportLineIndex = getLineIndexForNewImports(originalCode);
-        edit.insert(new vscode.Position(Math.max(newImportLineIndex, 0), 0), `import ${subComponentName} from './${subComponentName}';\n`);
+        const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\n`;
+        edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine);
     });
 };
 
