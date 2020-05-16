@@ -69,7 +69,6 @@ const addSubComponentImport = async (editor, subComponentName) => {
 const removeUnusedImports = async editor => {
     await editor.edit(async edit => {
         const linterResults = getLinterResultsForUnusedImports(editor.document.getText());
-        debugger;
         
         linterResults.forEach(linterResult => {
             const unusedImport = extractEntityNameFromLinterResult(linterResult);
