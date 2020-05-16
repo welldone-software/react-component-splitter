@@ -14,7 +14,7 @@ const getUndefinedVarsFromCode = code => {
 			ecmaFeatures: {
 			  jsx: true,
 			},
-			ecmaVersion: 2015,
+			ecmaVersion: 2017,
 			sourceType: 'module',
 		},
 		rules: {
@@ -38,7 +38,7 @@ const getLinterResultsForUnusedImports = code => {
             ecmaFeatures: {
             jsx: true,
             },
-            ecmaVersion: 2015,
+            ecmaVersion: 2017,
             sourceType: 'module',
         },
         rules: {
@@ -59,7 +59,7 @@ const fixImportsOrder = code => {
             ecmaFeatures: {
             jsx: true,
             },
-            ecmaVersion: 2015,
+            ecmaVersion: 2017,
             sourceType: 'module',
         },
         rules: {

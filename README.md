@@ -21,6 +21,8 @@ The extension, as of the current version, is based on several basic assumptions:
 
 - Imports and variables that become unused after splitting, will be deleted from the original component and re-imported in the new component
 
+- The extension uses eslint Linters which are all set for ecmaVersion 2017
+
 ## Reporting Bugs
 
 If you find a bug or malfunction, or have any other comments, you can contact us via email: [sahara@welldone-software.com](mailto:sahara@welldone-software.com), or open a github issue (with specific code example).
