@@ -53,7 +53,7 @@ const fixImportsOrder = code => {
     const linter = new eslint.Linter();	
     linter.defineRule('import/order', eslintPluginImport.rules['order']);
 
-    return linter.verifyAndFix(code, {
+    const linterFixReport = linter.verifyAndFix(code, {
         parser: parseForESLint,
         parserOptions: {
             ecmaFeatures: {
@@ -65,7 +65,8 @@ const fixImportsOrder = code => {
         rules: {
             'import/order': 1,
         },
-    }).output;
+    });
+    return linterFixReport.output;
 }
 
 const extractEntityNameFromLinterResult = linterResult => {
