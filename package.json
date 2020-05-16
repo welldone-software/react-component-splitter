@@ -2,7 +2,7 @@
 	"name": "react-component-splitter",
 	"displayName": "react-component-splitter",
 	"description": "Splits long components into shorter, readable subcomponents",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"icon": "images/icon.png",
 	"repository": {
 		"type": "git",
@@ -69,6 +69,7 @@
 		"eslint-plugin-unused-imports": "^0.1.2",
 		"fs": "^0.0.1-security",
 		"path": "^0.12.7",
-		"vsce": "^1.75.0"
+		"vsce": "^1.75.0",
+		"@typescript-eslint/parser": "2.0.0"
 	}
 }
