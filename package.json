@@ -26,7 +26,8 @@
 		"Code Splitter",
 		"Component Split",
 		"Component Splitter",
-		"SubComponent"
+		"SubComponent",
+		"Sub Component"
 	],
 	"activationEvents": [
 		"*"
