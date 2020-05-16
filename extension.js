@@ -24,7 +24,7 @@ const activate = context => {
 				const subComponentName = await getSubComponentNameFromUser(folderPath);
 				const subComponentPath = path.join(folderPath, `${subComponentName}.js`);
 				const {subComponentCode, subComponentProps} = await generateSubComponentCode(editor, selectedCode, subComponentName);
-				await createSubComponentFile(subComponentCode, subComponentPath);
+				await createSubComponentFile(subComponentPath, subComponentCode);
 				await replaceOriginalCode(editor, subComponentName, subComponentProps);
 
 			} catch (e) {

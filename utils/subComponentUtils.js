@@ -185,7 +185,7 @@ const generateSubComponentCode = async (editor, selectedCode, subComponentName) 
 	return {subComponentCode, subComponentProps};
 };
 
-const createSubComponentFile = async (code, subComponentPath) => {
+const createSubComponentFile = async (subComponentPath, code) => {
 	const {workspaceFolders} = vscode.workspace;
 	if (!workspaceFolders || workspaceFolders.length === 0) {
 		return new Error('You must add working environment!');
