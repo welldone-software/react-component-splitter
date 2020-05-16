@@ -2,7 +2,7 @@
 	"name": "react-component-splitter",
 	"displayName": "React Component Splitter",
 	"description": "Splits long components into shorter, readable subcomponents",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"icon": "images/icon.png",
 	"repository": {
 		"type": "git",
