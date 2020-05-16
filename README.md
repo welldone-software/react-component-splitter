@@ -8,6 +8,8 @@ This extension allows to easily split long React components into sub-components.
 
 **2**. Choose  `Split to New Component`  from the Right-Click Menu / Command Palette.
 
+**3**. Enter a name for the new sub-component.
+
 ![enter image description here](https://raw.githubusercontent.com/welldone-software/react-component-splitter/master/images/example.gif)
 
 
