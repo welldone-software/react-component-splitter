@@ -1,6 +1,6 @@
 # React Component Splitter
 
-This extension allows to easily split long React components into subcomponents.
+This VSCode extension allows to easily split long React components into sub-components.
 
 ## Usages:
 
