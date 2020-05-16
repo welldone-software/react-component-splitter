@@ -5,6 +5,7 @@ const {
 	getUndefinedVarsFromCode,
 	getLinterResultsForUnusedImports,
 	extractEntityNameFromLinterResult,
+	fixImportsOrder,
 } = require('./linterUtils');
 const {
 	generateSubComponentElement,
@@ -43,30 +44,32 @@ const trimAndAlignCode = code => {
 	let formattedCode = lines[firstCodeLineIndex].replace(/^ +/, '');
 	
 	for (let i = firstCodeLineIndex + 1; i < lastCodeLineIndex; i++) {
-		formattedCode = `${formattedCode}\n\t${lines[i].startsWith(leadingSpaces) ?
+		formattedCode = `${formattedCode}\r\n  ${lines[i].startsWith(leadingSpaces) ?
 			lines[i].substring(numberOfLeadingSpaces) : lines[i]}`;
 	}
 	if (firstCodeLineIndex !== lastCodeLineIndex) {
-		formattedCode = `${formattedCode}\n\t${lines[lastCodeLineIndex].substring(numberOfLeadingSpaces)}`;
+		formattedCode = `${formattedCode}\r\n  ${lines[lastCodeLineIndex].substring(numberOfLeadingSpaces)}`;
 	}
 	
 	return formattedCode;
 };
 
 const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [], imports = []}) => {
-	let importsString = `import React from 'react';\n`;
+	let importsString = `import React from 'react';\r\n`;
 	imports.forEach(importLine => {
-		importsString = `${importsString}${importLine}\n`;
+		importsString = `${importsString}${importLine}\r\n`;
 	});
 	let propsString = '';
 	if (props.length > 2) {
-		propsString = `{\n\t${props.join(',\n\t')},\n}`;
+		propsString = `{\r\n  ${props.join(',\r\n  ')},\r\n}`;
 	} else if (props.length === 2) {
 		propsString = `{${props.join(', ')}}`;
 	} else if (props.length === 1) {
 		propsString = `{${props[0]}}`;
 	}
-	return `${importsString}\nconst ${subComponentName} = (${propsString}) => (\n\t${jsx}\n);\n\nexport default ${subComponentName};\n`;
+
+	const subComponentCode = `${importsString}\r\nconst ${subComponentName} = (${propsString}) => (\r\n  ${jsx}\r\n);\r\n\r\nexport default ${subComponentName};\r\n`;
+	return fixImportsOrder(subComponentCode);
 }
 
 const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
@@ -126,17 +129,19 @@ const getUnusedImportsFromCode = code => {
 	
 	linterResults.forEach(linterResult => {
 		const unusedImport = extractEntityNameFromLinterResult(linterResult);
-		const codeStartingAtImport = [...codeLines].slice(linterResult.line - 1).join('\n');
-		let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
-		importLocation = importLocation.substring(
-			0, Math.min(importLocation.indexOf('\n'), importLocation.indexOf(';'))
-		);
-		const importLine = codeLines[linterResult.line - 1];
-		const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImport}\\s+from\\s+.*$`, 'g');
-		const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
+		if (unusedImport) {
+			const codeStartingAtImport = [...codeLines].slice(linterResult.line - 1).join('\n');
+			let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
+			importLocation = importLocation.substring(
+				0, Math.min(importLocation.indexOf('\n'), importLocation.indexOf(';'))
+			);
+			const importLine = codeLines[linterResult.line - 1];
+			const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImport}\\s+from\\s+.*$`, 'g');
+			const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
 
-		const formattedImportLine = `import ${isDefaultTypeImport ? unusedImport : `{${unusedImport}}`} ${importLocation};`;
-		unusedImports.push(formattedImportLine);
+			const formattedImportLine = `import ${isDefaultTypeImport ? unusedImport : `{${unusedImport}}`} ${importLocation};`;
+			unusedImports.push(formattedImportLine);
+		}
 	});
 	
 	return unusedImports;
@@ -153,7 +158,7 @@ const generateSubComponentPropsAndImports = (editor, selectedCode, subComponentN
 	const originalCodeWithSubComponentElement = replaceRangeOfGivenCode(originalCode, editor.selection, subComponentElement);
 
 	const subComponentImportLineIndex = getLineIndexForNewImports(originalCode);
-	const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\n`;
+	const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\r\n`;
 	const replacedOriginalCode = addImportToCode(originalCodeWithSubComponentElement, subComponentImportLine, subComponentImportLineIndex);
 
 	const unusedImports = getUnusedImportsFromCode(replacedOriginalCode);

@@ -1,10 +1,13 @@
 const eslint = require('eslint');
-const {parseForESLint} = require('babel-eslint');
 const eslintPluginReact = require('eslint-plugin-react');
 const eslintPluginUnusedImports = require('eslint-plugin-unused-imports');
+const eslintPluginImport = require('eslint-plugin-import');
+const {parseForESLint} = require('babel-eslint');
 
 const getUndefinedVarsFromCode = code => {
-	const linter = new eslint.Linter();	
+    const linter = new eslint.Linter();	
+    linter.defineRule('react/jsx-no-undef', eslintPluginReact.rules['jsx-no-undef']);
+
 	const linterResults = linter.verify(code, {
 		parser: parseForESLint,
 		parserOptions: {
@@ -15,9 +18,10 @@ const getUndefinedVarsFromCode = code => {
 			sourceType: 'module',
 		},
 		rules: {
-			'no-undef': 'error',
+            'no-undef': 'error',
+            'react/jsx-no-undef': 'error',
 		},
-	});
+    });
 	const undefinedVars = linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult));
 	return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
 };
@@ -45,6 +49,25 @@ const getLinterResultsForUnusedImports = code => {
     });
 };
 
+const fixImportsOrder = code => {
+    const linter = new eslint.Linter();	
+    linter.defineRule('import/order', eslintPluginImport.rules['order']);
+
+    return linter.verifyAndFix(code, {
+        parser: parseForESLint,
+        parserOptions: {
+            ecmaFeatures: {
+            jsx: true,
+            },
+            ecmaVersion: 2015,
+            sourceType: 'module',
+        },
+        rules: {
+            'import/order': 1,
+        },
+    }).output;
+}
+
 const extractEntityNameFromLinterResult = linterResult => {
     const entityNameMatch = linterResult.message.match(/^[^']*'(?<entityName>[^']+)'.*/);
     return entityNameMatch && entityNameMatch.groups.entityName;
@@ -53,5 +76,6 @@ const extractEntityNameFromLinterResult = linterResult => {
 module.exports = {
 	getUndefinedVarsFromCode,
 	getLinterResultsForUnusedImports,
-	extractEntityNameFromLinterResult,
+    extractEntityNameFromLinterResult,
+    fixImportsOrder,
 };

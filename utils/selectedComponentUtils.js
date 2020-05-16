@@ -34,7 +34,7 @@ const generateSubComponentElement = (editor, subComponentName, subComponentProps
     let propsAndClosing = '/';
     
     if (formattedProps.length > 3) {
-        propsAndClosing = `\n${leadingSpaces}\t${formattedProps.join(`\n${leadingSpaces}\t`)}\n${leadingSpaces}/`;
+        propsAndClosing = `\r\n${leadingSpaces}  ${formattedProps.join(`\r\n${leadingSpaces}  `)}\r\n${leadingSpaces}/`;
     } else if (formattedProps.length > 0) {
         propsAndClosing = ` ${formattedProps.join(' ')}/`;
     }
@@ -61,7 +61,7 @@ const addSubComponentImport = async (editor, subComponentName) => {
     await editor.edit(async edit => {
         const originalCode = editor.document.getText();
         const newImportLineIndex = getLineIndexForNewImports(originalCode);
-        const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\n`;
+        const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\r\n`;
         edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine);
     });
 };
@@ -72,17 +72,19 @@ const removeUnusedImports = async editor => {
         
         linterResults.forEach(linterResult => {
             const unusedImport = extractEntityNameFromLinterResult(linterResult);
-            const codeLine = editor.document.lineAt(linterResult.line - 1);
-            const codeLineText = codeLine.text;
-            const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImport}\\s+from\\s+.*$`, 'g');
-            const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImport}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
-            const isDefaultTypeImport = codeLineText.match(regexForDefaultTypeImport);
-            const isNonDefaultTypeImport = codeLineText.match(regexForNonDefaultTypeImport);
-            
-            if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
-                edit.delete(codeLine.rangeIncludingLineBreak);
-            } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
-                edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineBeforeUnusedImport>'));
+            if (unusedImport) {
+                const codeLine = editor.document.lineAt(linterResult.line - 1);
+                const codeLineText = codeLine.text;
+                const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImport}\\s+from\\s+.*$`, 'g');
+                const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImport}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
+                const isDefaultTypeImport = codeLineText.match(regexForDefaultTypeImport);
+                const isNonDefaultTypeImport = codeLineText.match(regexForNonDefaultTypeImport);
+                
+                if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
+                    edit.delete(codeLine.rangeIncludingLineBreak);
+                } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
+                    edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineBeforeUnusedImport>'));
+                }
             }
         });
     });
