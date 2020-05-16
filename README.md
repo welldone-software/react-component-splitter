@@ -2,7 +2,7 @@
 
 This extension allows to easily split long React components into sub-components.
 
-## Usage:
+## Usage
 
 **1**. Select the code you want to export to a new sub-component.
 
