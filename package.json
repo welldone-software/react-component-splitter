@@ -1,6 +1,6 @@
 {
 	"name": "react-component-splitter",
-	"displayName": "react-component-splitter",
+	"displayName": "React Component Splitter",
 	"description": "Splits long components into shorter, readable subcomponents",
 	"version": "0.7.0",
 	"icon": "images/icon.png",
@@ -18,10 +18,14 @@
 		"Snippets"
 	],
 	"keywords": [
+		"React Component Splitter",
 		"React",
+		"Split",
 		"Component",
 		"Code Split",
 		"Code Splitter",
+		"Component Split",
+		"Component Splitter",
 		"SubComponent"
 	],
 	"activationEvents": [
