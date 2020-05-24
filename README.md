@@ -20,7 +20,7 @@ The extension, as of the current version, is based on several basic assumptions:
 
 - The selected code represents a valid jsx for a new React component, and has one wrapper tag
 
-- Imports and variables that become unused after splitting, will be deleted from the original component and re-imported in the new component
+- Imports and variables that become unused after splitting, will be deleted from the original component file and re-imported in the new component file
 
 - The extension uses eslint Linters which are all set for ecmaVersion 2017
 
