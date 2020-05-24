@@ -25,8 +25,8 @@ const getUndefinedVarsFromCode = code => {
             'react/jsx-no-undef': 'error',
         },
     });
-	const undefinedVars = linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult));
-	return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
+    const undefinedVars = linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult));
+    return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
 };
 
 const getLinterResultsForUnusedImports = async code => {
@@ -90,7 +90,7 @@ const extractEntityNameFromLinterResult = linterResult => {
 module.exports = {
     getUndefinedVarsFromCode,
     getUnusedImportEntitiesFromCode,
-	getLinterResultsForUnusedImports,
+    getLinterResultsForUnusedImports,
     extractEntityNameFromLinterResult,
     fixImportsOrder,
 };
