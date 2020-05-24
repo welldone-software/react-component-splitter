@@ -8,10 +8,11 @@ const {
     getLinterResultsForUnusedImports,
     extractEntityNameFromLinterResult,
 } = require('./linterUtils');
+
 const getSelectedCode = editor => {
 	const selectedCode = editor.document.getText(editor.selection);
 	if (!selectedCode || selectedCode === '') {
-		throw new Error('No code selected');
+        throw new Error('No code selected');
 	}
 	return selectedCode;
 };

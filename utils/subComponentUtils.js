@@ -60,6 +60,7 @@ const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [],
 	imports.forEach(importLine => {
 		importsString = `${importsString}${importLine}\r\n`;
 	});
+	
 	let propsString = '';
 	if (props.length > 2) {
 		propsString = `{\r\n  ${props.join(',\r\n  ')},\r\n}`;

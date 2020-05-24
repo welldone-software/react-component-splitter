@@ -23,7 +23,7 @@ const getUndefinedVarsFromCode = code => {
 		rules: {
             'no-undef': 'error',
             'react/jsx-no-undef': 'error',
-		},
+        },
     });
 	const undefinedVars = linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult));
 	return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
