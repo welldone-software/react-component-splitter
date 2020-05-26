@@ -7,20 +7,22 @@ const babelPresetReact = require('@babel/preset-react');
 const babelPluginProposalOptionalChaining = require('@babel/plugin-proposal-optional-chaining');
 const {parseForESLint} = require('babel-eslint');
 
+const linterConfig = {
+    parser: parseForESLint,
+    parserOptions: {
+        ecmaFeatures: {jsx: true},
+        ecmaVersion: 2017,
+        sourceType: 'module',
+    },
+};
+
 const getUndefinedVarsFromCode = code => {
     const linter = new eslint.Linter();	
     linter.defineRule('react/jsx-no-undef', eslintPluginReact.rules['jsx-no-undef']);
-
-	const linterResults = linter.verify(code, {
-		parser: parseForESLint,
-		parserOptions: {
-			ecmaFeatures: {
-			  jsx: true,
-			},
-			ecmaVersion: 2017,
-			sourceType: 'module',
-		},
-		rules: {
+    
+    const linterResults = linter.verify(code, {
+        ...linterConfig,
+        rules: {
             'no-undef': 'error',
             'react/jsx-no-undef': 'error',
         },
@@ -41,14 +43,7 @@ const getLinterResultsForUnusedImports = async code => {
     });
 
     return linter.verify(babelFileResult.code, {
-        parser: parseForESLint,
-        parserOptions: {
-            ecmaFeatures: {
-            jsx: true,
-            },
-            ecmaVersion: 2017,
-            sourceType: 'module',
-        },
+        ...linterConfig,
         rules: {
             'react/jsx-uses-react': 1,
             'react/jsx-uses-vars': 1,
@@ -67,14 +62,7 @@ const fixImportsOrder = code => {
     linter.defineRule('import/order', eslintPluginImport.rules['order']);
 
     const linterFixReport = linter.verifyAndFix(code, {
-        parser: parseForESLint,
-        parserOptions: {
-            ecmaFeatures: {
-            jsx: true,
-            },
-            ecmaVersion: 2017,
-            sourceType: 'module',
-        },
+        ...linterConfig,
         rules: {
             'import/order': 1,
         },
