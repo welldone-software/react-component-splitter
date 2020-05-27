@@ -22,19 +22,18 @@ const getSubComponentNameFromUser = async folderPath => {
 	if (!subComponentName || subComponentName.length === 0) {
 		throw new Error('Empty name received');
 	}
-	if (!subComponentName.match(/^[A-Z][0-9a-zA-Z_$].*$/g)) {
-		throw new Error('Invalid React component name');
+	if (!subComponentName.match(/^[A-Z][0-9a-zA-Z_$]*$/g)) {
+		throw new Error('Invalid React component name.\r\nChoose a name that starts with a capital letter, followed by letters or digits only');
 	}
 
-	const formattedSubComponentName = subComponentName.replace(/\.js$/, '');
-	const subComponentFileName = `${formattedSubComponentName}.js`;
+	const subComponentFileName = `${subComponentName.replace(/\.js$/, '')}.js`;
 	const subComponentPath = path.join(folderPath, subComponentFileName);
 	const subComponentFileAlreadyExists = await fs.existsSync(subComponentPath);
 	if (subComponentFileAlreadyExists) {
 		throw new Error(`${subComponentFileName} already exists in the current folder`);
 	}
 
-	return formattedSubComponentName;
+	return subComponentName;
 };
 
 const trimAndAlignCode = code => {
