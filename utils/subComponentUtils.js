@@ -26,14 +26,15 @@ const getSubComponentNameFromUser = async folderPath => {
 		throw new Error('Invalid React component name');
 	}
 
-	const subComponentFileName = `${subComponentName}.js`;
+	const formattedSubComponentName = subComponentName.replace(/\.js$/, '');
+	const subComponentFileName = `${formattedSubComponentName}.js`;
 	const subComponentPath = path.join(folderPath, subComponentFileName);
 	const subComponentFileAlreadyExists = await fs.existsSync(subComponentPath);
 	if (subComponentFileAlreadyExists) {
 		throw new Error(`${subComponentFileName} already exists in the current folder`);
 	}
 
-	return subComponentName;
+	return formattedSubComponentName;
 };
 
 const trimAndAlignCode = code => {
