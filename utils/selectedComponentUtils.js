@@ -23,8 +23,8 @@ const validateSelectedCode = async selectedCode => {
             presets: [babelPresetReact],
             plugins: [[babelPluginProposalOptionalChaining, {loose: true}]],
         });
-        if (!selectedCode.match(/^\s*<[^>]*>/)) {
-            throw new Error('expected "<" and ">" in the beginnig and the end of the code');
+        if (!selectedCode.match(/^\s*<.*>\s*$/s)) {
+            throw new Error('expected one wrapping element (for example, a wrapping <div>...</div> or any other element for the entire selection)');
         }
     } catch (e) {
         throw new Error(`Invalid component code: ${e.message}`);
