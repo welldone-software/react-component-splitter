@@ -20,7 +20,7 @@ const activate = context => {
 				const selectedCode = getSelectedCode(editor);
 				await validateSelectedCode(selectedCode);
 
-				const folderPath = editor.document.uri.fsPath.replace(/[^\/]+$/, '');
+				const folderPath = path.join(editor.document.uri.fsPath, '..');
 				const subComponentName = await getSubComponentNameFromUser(folderPath);
 				const subComponentPath = path.join(folderPath, `${subComponentName}.js`);
 				const {subComponentCode, subComponentProps} = await generateSubComponentCode(editor, selectedCode, subComponentName);
