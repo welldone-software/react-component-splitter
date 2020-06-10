@@ -76,6 +76,7 @@
 		"eslint-plugin-react": "^7.19.0",
 		"eslint-plugin-unused-imports": "^0.1.2",
 		"fs": "^0.0.1-security",
+		"lodash": "^4.17.15",
 		"path": "^0.12.7",
 		"vsce": "^1.75.0"
 	}

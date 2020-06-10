@@ -1,4 +1,3 @@
-
 const vscode = require('vscode');
 const babel = require("@babel/core");
 const babelPresetReact = require('@babel/preset-react');

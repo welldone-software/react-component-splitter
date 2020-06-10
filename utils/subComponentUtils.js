@@ -153,16 +153,16 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 	const originalCode = editor.document.getText();
 
 	const subComponentCodeWithoutProps = fitCodeInsideReactComponentSkeleton({subComponentName, jsx: selectedCode});
-	const subComponentUndefinedVars = getUndefinedVarsFromCode(subComponentCodeWithoutProps);
+	const subComponentUndefinedVars = await getUndefinedVarsFromCode(subComponentCodeWithoutProps);
 	const {subComponentProps, subComponentImports} = sortUndefinedVarsToPropsAndImports(originalCode, subComponentUndefinedVars);
-	
+
 	const subComponentElement = generateSubComponentElement(editor, subComponentName, subComponentProps);
 	const originalCodeWithSubComponentElement = replaceRangeOfGivenCode(originalCode, editor.selection, subComponentElement);
 
 	const subComponentImportLineIndex = getLineIndexForNewImports(originalCode);
 	const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\r\n`;
 	const replacedOriginalCode = addImportToCode(originalCodeWithSubComponentElement, subComponentImportLine, subComponentImportLineIndex);
-	
+
 	const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
 	const unusedImports = await getUnusedImportsFromCode(replacedOriginalCode, originalUnusedImportEntities);
 	unusedImports.forEach(unusedImport => {
@@ -170,13 +170,13 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 		if (!importAlreadyExists) {
 			subComponentImports.push(unusedImport);
 		}
-	})
+	});
 	
 	return {subComponentProps, subComponentImports};
 }
 
 const generateSubComponentCode = async (editor, selectedCode, subComponentName) => {
-	const prettierSelectedCode = trimAndAlignCode(selectedCode);	
+	const prettierSelectedCode = trimAndAlignCode(selectedCode);
 	const {subComponentProps, subComponentImports} = await generateSubComponentPropsAndImports(editor, prettierSelectedCode, subComponentName);
 	const subComponentCode = fitCodeInsideReactComponentSkeleton({
 		subComponentName,
