@@ -30,9 +30,17 @@ const validateSelectedCode = async selectedCode => {
     }
 };
 
+const getNumberOfLeadingSpaces = editor => {
+    const selectedCode = getSelectedCode(editor);
+    const selectedCodeLines = selectedCode.split('\n');
+    const firstLineOfCode = selectedCodeLines.find(line => line.match(/^\s*<.*$/));
+    return firstLineOfCode.search(/\S/);
+};
+
 const generateSubComponentElement = (editor, subComponentName, subComponentProps) => {
     const formattedProps = subComponentProps.map(prop => `${prop}={${prop}}`);
-    const leadingSpaces = ' '.repeat(editor.selection.start.character);
+    const numberOfLeadingSpaces = getNumberOfLeadingSpaces(editor);
+    const leadingSpaces = ' '.repeat(numberOfLeadingSpaces);
     let propsAndClosing = '/';
     
     if (formattedProps.length > 3) {
@@ -41,7 +49,7 @@ const generateSubComponentElement = (editor, subComponentName, subComponentProps
         propsAndClosing = ` ${formattedProps.join(' ')}/`;
     }
     
-    return `<${subComponentName}${propsAndClosing}>`;
+    return `${leadingSpaces}<${subComponentName}${propsAndClosing}>`;
 };
 
 const replaceSelectedCodeWithSubComponentElement = async (editor, subComponentName, subComponentProps) => {
