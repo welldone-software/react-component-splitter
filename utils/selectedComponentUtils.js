@@ -1,11 +1,12 @@
+const {EOL} = require('os');
 const vscode = require('vscode');
 const babel = require("@babel/core");
 const babelPresetReact = require('@babel/preset-react');
 const babelPluginProposalOptionalChaining = require('@babel/plugin-proposal-optional-chaining');
 const {
-    getUnusedImportEntitiesFromCode,
-    getLinterResultsForUnusedImports,
     extractEntityNameFromLinterResult,
+    getLinterResultsForUnusedImports,
+    getUnusedImportEntitiesFromCode,
 } = require('./linterUtils');
 
 const getSelectedCode = editor => {
@@ -16,7 +17,34 @@ const getSelectedCode = editor => {
 	return selectedCode;
 };
 
+const getLeadingSpaces = (selectedCode, endToStart = false) => {
+    const selectedCodeLines = selectedCode.split('\n');
+    if (endToStart) {
+        selectedCodeLines.reverse();
+    }
+
+    const firstCodeLineIndex = selectedCodeLines.findIndex(line =>
+        endToStart ? line.match(/^\s*[<|\/>].*$/) : line.match(/^\s*<.*$/));
+    const numberOfLeadingSpaces = selectedCodeLines[firstCodeLineIndex].search(/\S/);
+    return ' '.repeat(numberOfLeadingSpaces);
+};
+
+const jsxElementsAreAdjacent = selectedCode => !selectedCode.match(/<.*<\/.*>/gs);
+
+const wrapAdjacentJsxElements = selectedCode => {
+    const leadingSpaces = getLeadingSpaces(selectedCode, true);
+    const lineIndent = '  ';
+    const selectedCodeLinesTrimmed = selectedCode.trim().split('\n');
+    const selectedCodeIndentedForWrapping = selectedCodeLinesTrimmed.map((line, i) =>
+        i > 0 ? `${lineIndent}${line.substring(leadingSpaces.length)}` : `${lineIndent}${line}`).join('\n');
+    return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
+};
+
 const validateSelectedCode = async selectedCode => {
+    if (jsxElementsAreAdjacent(selectedCode)) {
+        const selectedCodeWithWrappingTag = wrapAdjacentJsxElements(selectedCode);
+        return validateSelectedCode(selectedCodeWithWrappingTag);
+    }
     try {
         await babel.transformAsync(selectedCode, {
             presets: [babelPresetReact],
@@ -25,26 +53,19 @@ const validateSelectedCode = async selectedCode => {
         if (!selectedCode.match(/^\s*<.*>\s*$/s)) {
             throw new Error('expected one wrapping element (for example, a wrapping <div>...</div> or any other element for the entire selection)');
         }
+        return selectedCode;
     } catch (e) {
         throw new Error(`Invalid component code: ${e.message}`);
     }
 };
 
-const getNumberOfLeadingSpaces = editor => {
-    const selectedCode = getSelectedCode(editor);
-    const selectedCodeLines = selectedCode.split('\n');
-    const firstLineOfCode = selectedCodeLines.find(line => line.match(/^\s*<.*$/));
-    return firstLineOfCode.search(/\S/);
-};
-
-const generateSubComponentElement = (editor, subComponentName, subComponentProps) => {
+const generateSubComponentElement = (selectedCode, subComponentName, subComponentProps) => {
     const formattedProps = subComponentProps.map(prop => `${prop}={${prop}}`);
-    const numberOfLeadingSpaces = getNumberOfLeadingSpaces(editor);
-    const leadingSpaces = ' '.repeat(numberOfLeadingSpaces);
+    const leadingSpaces = getLeadingSpaces(selectedCode);
     let propsAndClosing = '/';
     
     if (formattedProps.length > 3) {
-        propsAndClosing = `\r\n${leadingSpaces}  ${formattedProps.join(`\r\n${leadingSpaces}  `)}\r\n${leadingSpaces}/`;
+        propsAndClosing = `${EOL}${leadingSpaces}  ${formattedProps.join(`${EOL}${leadingSpaces}  `)}${EOL}${leadingSpaces}/`;
     } else if (formattedProps.length > 0) {
         propsAndClosing = ` ${formattedProps.join(' ')}/`;
     }
@@ -52,9 +73,11 @@ const generateSubComponentElement = (editor, subComponentName, subComponentProps
     return `${leadingSpaces}<${subComponentName}${propsAndClosing}>`;
 };
 
-const replaceSelectedCodeWithSubComponentElement = async (editor, subComponentName, subComponentProps) => {
-    const subComponentElement = generateSubComponentElement(editor, subComponentName, subComponentProps);
-    await editor.edit(async edit => edit.replace(editor.selection, subComponentElement));
+const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, subComponentName, subComponentProps) => {
+    const subComponentElement = generateSubComponentElement(selectedCode, subComponentName, subComponentProps);
+    const leadingSpaces = getLeadingSpaces(getSelectedCode(editor), true);
+    const leadingSpacesAfterSelectionStart = ' '.repeat(leadingSpaces.length - editor.selection.start.character);
+    await editor.edit(async edit => edit.replace(editor.selection, `${leadingSpacesAfterSelectionStart}${subComponentElement.trim()}`));
 };
 
 const getLineIndexForNewImports = code => {
@@ -68,7 +91,7 @@ const getLineIndexForNewImports = code => {
 const addSubComponentImport = async (editor, subComponentName) => {
     const originalCode = editor.document.getText();
     const newImportLineIndex = getLineIndexForNewImports(originalCode);
-    const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\r\n`;
+    const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';${EOL}`;
     await editor.edit(async edit => edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine));
 };
 
@@ -95,17 +118,17 @@ const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
     });
 };
 
-const replaceOriginalCode = async (editor, subComponentName, subComponentProps) => {
+const replaceOriginalCode = async (editor, selectedCode, subComponentName, subComponentProps) => {
     const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
-    await replaceSelectedCodeWithSubComponentElement(editor, subComponentName, subComponentProps);
+    await replaceSelectedCodeWithSubComponentElement(editor, selectedCode, subComponentName, subComponentProps);
     await addSubComponentImport(editor, subComponentName);
     await removeUnusedImports(editor, originalUnusedImportEntities);
 };
 
 module.exports = {
-    getSelectedCode,
-    validateSelectedCode,
     generateSubComponentElement,
     getLineIndexForNewImports,
+    getSelectedCode,
     replaceOriginalCode,
+    validateSelectedCode,
 };

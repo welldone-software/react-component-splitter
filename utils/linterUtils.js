@@ -82,9 +82,9 @@ const extractEntityNameFromLinterResult = linterResult => {
 };
 
 module.exports = {
-    getUndefinedVarsFromCode,
-    getUnusedImportEntitiesFromCode,
-    getLinterResultsForUnusedImports,
     extractEntityNameFromLinterResult,
     fixImportsOrder,
+    getLinterResultsForUnusedImports,
+    getUndefinedVarsFromCode,
+    getUnusedImportEntitiesFromCode,
 };

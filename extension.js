@@ -2,13 +2,13 @@ const vscode = require('vscode');
 const path = require('path');
 const {
 	getSelectedCode,
-	validateSelectedCode,
 	replaceOriginalCode,
+	validateSelectedCode,
 } = require('./utils/selectedComponentUtils');
 const {
-	getSubComponentNameFromUser,
-	generateSubComponentCode,
 	createSubComponentFile,
+	generateSubComponentCode,
+	getSubComponentNameFromUser,
 } = require('./utils/subComponentUtils');
 
 const activate = context => {
@@ -17,16 +17,15 @@ const activate = context => {
 		async () => {	
 			try {
 				const editor = vscode.window.activeTextEditor;
-				const selectedCode = getSelectedCode(editor);
-				await validateSelectedCode(selectedCode);
-
+				const selectedCode = await validateSelectedCode(getSelectedCode(editor));
 				const folderPath = path.join(editor.document.uri.fsPath, '..');
+				
 				const subComponentName = await getSubComponentNameFromUser(folderPath);
 				const subComponentPath = path.join(folderPath, `${subComponentName}.js`);
 				const {subComponentCode, subComponentProps} = await generateSubComponentCode(editor, selectedCode, subComponentName);
+				
 				await createSubComponentFile(subComponentPath, subComponentCode);
-				await replaceOriginalCode(editor, subComponentName, subComponentProps);
-
+				await replaceOriginalCode(editor, selectedCode, subComponentName, subComponentProps);
 			} catch (e) {
 				vscode.window.showErrorMessage(e.message);
 			}

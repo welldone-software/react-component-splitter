@@ -1,5 +1,5 @@
 Arguments: 
-  /Users/sahar/.nvm/versions/node/v12.12.0/bin/node /usr/local/Cellar/yarn/1.19.1/libexec/bin/yarn.js add -W @babel-core
+  /Users/sahar/.nvm/versions/node/v12.12.0/bin/node /usr/local/Cellar/yarn/1.19.1/libexec/bin/yarn.js add -W @types/babel__preset-react
 
 PATH: 
   /Library/Frameworks/Python.framework/Versions/3.7/bin:/Users/sahar/.nvm/versions/node/v12.12.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Frameworks/Python.framework/Versions/3.7/bin
@@ -14,8 +14,8 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/@babel-core: Request "https://registry.yarnpkg.com/@babel-core" returned a 405
-      at Request.params.callback [as _callback] (/usr/local/Cellar/yarn/1.19.1/libexec/lib/cli.js:66935:18)
+  Error: https://registry.yarnpkg.com/@types%2fbabel__preset-react: Not found
+      at Request.params.callback [as _callback] (/usr/local/Cellar/yarn/1.19.1/libexec/lib/cli.js:66926:18)
       at Request.self.callback (/usr/local/Cellar/yarn/1.19.1/libexec/lib/cli.js:140564:22)
       at Request.emit (events.js:210:5)
       at Request.<anonymous> (/usr/local/Cellar/yarn/1.19.1/libexec/lib/cli.js:141536:10)
@@ -31,7 +31,7 @@ npm manifest:
   	"name": "react-component-splitter",
   	"displayName": "React Component Splitter",
   	"description": "Splits long components into shorter, readable subcomponents",
-  	"version": "0.17.0",
+  	"version": "0.28.0",
   	"icon": "images/icon.png",
   	"repository": {
   		"type": "git",
@@ -95,7 +95,7 @@ npm manifest:
   		"vscode-test": "^1.3.0"
   	},
   	"dependencies": {
-  		"@babel/core": "^7.9.0",
+  		"@babel/core": "^7.9.6",
   		"@babel/plugin-proposal-optional-chaining": "^7.9.0",
   		"@babel/preset-react": "^7.9.4",
   		"@typescript-eslint/parser": "2.0.0",
@@ -105,6 +105,8 @@ npm manifest:
   		"eslint-plugin-react": "^7.19.0",
   		"eslint-plugin-unused-imports": "^0.1.2",
   		"fs": "^0.0.1-security",
+  		"lodash": "^4.17.15",
+  		"os": "^0.1.1",
   		"path": "^0.12.7",
   		"vsce": "^1.75.0"
   	}
@@ -125,7 +127,7 @@ Lockfile:
     dependencies:
       "@babel/highlight" "^7.8.3"
   
-  "@babel/core@^7.9.0":
+  "@babel/core@^7.9.6":
     version "7.9.6"
     resolved "https://registry.yarnpkg.com/@babel/core/-/core-7.9.6.tgz#d9aa1f580abf3b2286ef40b6904d390904c63376"
     integrity sha512-nD3deLvbsApbHAHttzIssYqgb883yU/d9roe4RZymBCDaZryMJDbptVpEpeQuRh4BJ+SYI8le9YGxKvFEvl1Wg==
@@ -1965,7 +1967,7 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/os-tmpdir/-/os-tmpdir-1.0.2.tgz#bbe67406c79aa85c5cfec766fe5734555dfa1274"
     integrity sha1-u+Z0BseaqFxc/sdm/lc0VV36EnQ=
   
-  os@0.1.1:
+  os@0.1.1, os@^0.1.1:
     version "0.1.1"
     resolved "https://registry.yarnpkg.com/os/-/os-0.1.1.tgz#208845e89e193ad4d971474b93947736a56d13f3"
     integrity sha1-IIhF6J4ZOtTZcUdLk5R3NqVtE/M=

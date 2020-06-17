@@ -1,12 +1,13 @@
+const {EOL} = require('os');
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const {
-	getUndefinedVarsFromCode,
-	getUnusedImportEntitiesFromCode,
-	getLinterResultsForUnusedImports,
 	extractEntityNameFromLinterResult,
 	fixImportsOrder,
+	getLinterResultsForUnusedImports,
+	getUndefinedVarsFromCode,
+	getUnusedImportEntitiesFromCode,
 } = require('./linterUtils');
 const {
 	generateSubComponentElement,
@@ -23,7 +24,7 @@ const getSubComponentNameFromUser = async folderPath => {
 		throw new Error('Empty name received');
 	}
 	if (!subComponentName.match(/^[A-Z][0-9a-zA-Z_$]*$/g)) {
-		throw new Error('Invalid React component name.\r\nChoose a name that starts with a capital letter, followed by letters or digits only');
+		throw new Error(`Invalid React component name.${EOL}Choose a name that starts with a capital letter, followed by letters or digits only`);
 	}
 
 	const subComponentFileName = `${subComponentName.replace(/\.js$/, '')}.js`;
@@ -45,32 +46,31 @@ const trimAndAlignCode = code => {
 	let formattedCode = lines[firstCodeLineIndex].replace(/^ +/, '');
 	
 	for (let i = firstCodeLineIndex + 1; i < lastCodeLineIndex; i++) {
-		formattedCode = `${formattedCode}\r\n  ${lines[i].startsWith(leadingSpaces) ?
+		formattedCode = `${formattedCode}${EOL}  ${lines[i].startsWith(leadingSpaces) ?
 			lines[i].substring(numberOfLeadingSpaces) : lines[i]}`;
 	}
 	if (firstCodeLineIndex !== lastCodeLineIndex) {
-		formattedCode = `${formattedCode}\r\n  ${lines[lastCodeLineIndex].substring(numberOfLeadingSpaces)}`;
+		formattedCode = `${formattedCode}${EOL}  ${lines[lastCodeLineIndex].substring(numberOfLeadingSpaces)}`;
 	}
-	
 	return formattedCode;
 };
 
 const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [], imports = []}) => {
-	let importsString = `import React from 'react';\r\n`;
+	let importsString = `import React from 'react';${EOL}`;
 	imports.forEach(importLine => {
-		importsString = `${importsString}${importLine}\r\n`;
+		importsString = `${importsString}${importLine}${EOL}`;
 	});
 	
 	let propsString = '';
 	if (props.length > 2) {
-		propsString = `{\r\n  ${props.join(',\r\n  ')},\r\n}`;
+		propsString = `{${EOL}  ${props.join(`,${EOL}  `)},${EOL}}`;
 	} else if (props.length === 2) {
 		propsString = `{${props.join(', ')}}`;
 	} else if (props.length === 1) {
 		propsString = `{${props[0]}}`;
 	}
 
-	const subComponentCode = `${importsString}\r\nconst ${subComponentName} = (${propsString}) => (\r\n  ${jsx}\r\n);\r\n\r\nexport default ${subComponentName};\r\n`;
+	const subComponentCode = `${importsString}${EOL}const ${subComponentName} = (${propsString}) => (${EOL}  ${jsx}${EOL});${EOL}${EOL}export default ${subComponentName};${EOL}`;
 	return fixImportsOrder(subComponentCode);
 }
 
@@ -89,7 +89,7 @@ const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
 			...res,
 			subComponentImports: [
 				...res.subComponentImports,
-				`import ${isDefaultTypeImport ? undefinedVar : `{${undefinedVar}}`} from ${importMatch.groups.importLocation.replace(/"/, "'")};`,
+				`import ${isDefaultTypeImport ? undefinedVar : `{${undefinedVar}}`} from ${importMatch.groups.importLocation.replace(/"/g, "'")};`,
 			]
 		};
 	}, {subComponentProps: [], subComponentImports: []});
@@ -141,7 +141,7 @@ const getUnusedImportsFromCode = async (code, importEntitiesToIgnore) => {
 			const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
 			const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
 
-			const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${importLocation};`;
+			const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${importLocation.replace(/"/g, "'")};`;
 			unusedImports.push(formattedImportLine);
 		}
 	});
@@ -156,11 +156,11 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 	const subComponentUndefinedVars = await getUndefinedVarsFromCode(subComponentCodeWithoutProps);
 	const {subComponentProps, subComponentImports} = sortUndefinedVarsToPropsAndImports(originalCode, subComponentUndefinedVars);
 
-	const subComponentElement = generateSubComponentElement(editor, subComponentName, subComponentProps);
+	const subComponentElement = generateSubComponentElement(selectedCode, subComponentName, subComponentProps);
 	const originalCodeWithSubComponentElement = replaceRangeOfGivenCode(originalCode, editor.selection, subComponentElement);
 
 	const subComponentImportLineIndex = getLineIndexForNewImports(originalCode);
-	const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';\r\n`;
+	const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';${EOL}`;
 	const replacedOriginalCode = addImportToCode(originalCodeWithSubComponentElement, subComponentImportLine, subComponentImportLineIndex);
 
 	const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
@@ -184,7 +184,6 @@ const generateSubComponentCode = async (editor, selectedCode, subComponentName) 
 		props: subComponentProps, 
 		imports: subComponentImports,
 	});
-
 	return {subComponentCode, subComponentProps};
 };
 
@@ -197,7 +196,7 @@ const createSubComponentFile = async (subComponentPath, code) => {
 };
 
 module.exports = {
-	getSubComponentNameFromUser,
-	generateSubComponentCode,
 	createSubComponentFile,
+	generateSubComponentCode,
+	getSubComponentNameFromUser,
 };
