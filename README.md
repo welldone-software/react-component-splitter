@@ -18,7 +18,7 @@ The extension, as of the current version, is based on several basic assumptions:
 
 - The new component should be created in the current component folder
 
-- The selected code represents a valid jsx for a new React component, and is wrapped in one element
+- The selected code represents a valid jsx for a new React component
 
 - Imports and variables that become unused after splitting, will be deleted from the original component file and re-imported in the new component file
 
