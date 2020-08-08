@@ -22,6 +22,7 @@ const transformCode = async code => {
         presets: [babelPresetReact],
         plugins: [[babelPluginProposalOptionalChaining, {loose: true}]],
     });
+    
     return babelFileResult.code;
 };
 
@@ -38,12 +39,14 @@ const getUndefinedVarsFromCode = async code => {
         },
     });
     const undefinedVars = compact(linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult)));
+    
     return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
 };
 
 const getLinterResultsForUnusedImports = async code => {
     const transformedCode = await transformCode(code);
     const linter = new eslint.Linter();	
+    
     linter.defineRule('react/jsx-uses-react', eslintPluginReact.rules['jsx-uses-react']);
     linter.defineRule('react/jsx-uses-vars', eslintPluginReact.rules['jsx-uses-vars']);
     linter.defineRule('unused-imports/no-unused-imports', eslintPluginUnusedImports.rules['no-unused-imports']);
@@ -73,6 +76,7 @@ const fixImportsOrder = code => {
             'import/order': 1,
         },
     });
+    
     return linterFixReport.output;
 };
 

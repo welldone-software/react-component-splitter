@@ -11,15 +11,17 @@ const {
 
 const getSelectedCode = editor => {
 	const selectedCode = editor.document.getText(editor.selection);
-	if (!selectedCode || selectedCode === '') {
+    
+    if (!selectedCode || selectedCode === '') {
         throw new Error('No code selected');
 	}
-	return selectedCode;
+    
+    return selectedCode;
 };
 
 const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
-    debugger;
     const selectedCodeLines = selectedCode.split('\n');
+    
     if (endToStart) {
         selectedCodeLines.reverse();
     }
@@ -27,6 +29,7 @@ const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
     const firstCodeLineIndex = selectedCodeLines.findIndex(line =>
         endToStart ? line.match(/^\s*[<|\/>].*$/) : line.match(/^\s*<.*$/));
     const indexOfFirstSpace = selectedCodeLines[firstCodeLineIndex].search(/\S/);
+    
     return Math.max(0, indexOfFirstSpace);
 };
 
@@ -38,6 +41,7 @@ const wrapAdjacentJsxElements = selectedCode => {
     const selectedCodeLinesTrimmed = selectedCode.trim().split('\n');
     const selectedCodeIndentedForWrapping = selectedCodeLinesTrimmed.map((line, i) =>
         i > 0 ? `${lineIndent}${line.substring(numberOfLeadingSpaces)}` : `${lineIndent}${line}`).join('\n');
+    
     return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
 };
 
@@ -82,6 +86,7 @@ const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, 
     const subComponentElement = generateSubComponentElement(selectedCode, subComponentName, subComponentProps);
     const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode);
     const leadingSpacesAfterSelectionStart = ' '.repeat(numberOfLeadingSpaces);
+    
     await editor.edit(async edit => edit.replace(editor.selection, `${leadingSpacesAfterSelectionStart}${subComponentElement.trim()}`));
 };
 
@@ -90,6 +95,7 @@ const getLineIndexForNewImports = code => {
     const firstImportLineIndex = codeLines.findIndex(codeLine => codeLine.match(/^\s*import /));
     const codeLinesFromFirstImport = firstImportLineIndex > -1 ? [...codeLines].splice(firstImportLineIndex) : codeLines;
     const indexOfFirstNonImportLine = codeLinesFromFirstImport.findIndex(codeLine => codeLine.match(/^\s*[^i]/)) - 1;
+    
     return Math.max(indexOfFirstNonImportLine, 0);
 };
 
@@ -97,14 +103,17 @@ const addSubComponentImport = async (editor, subComponentName) => {
     const originalCode = editor.document.getText();
     const newImportLineIndex = getLineIndexForNewImports(originalCode);
     const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';${EOL}`;
+    
     await editor.edit(async edit => edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine));
 };
 
 const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
     const linterResults = await getLinterResultsForUnusedImports(editor.document.getText());
+    
     await editor.edit(async edit => {        
         linterResults.forEach(linterResult => {
             const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
+            
             if (unusedImportEntity && !importEntitiesToIgnore.includes(unusedImportEntity)) {
                 const codeLine = editor.document.lineAt(linterResult.line - 1);
                 const codeLineText = codeLine.text;

@@ -20,6 +20,7 @@ const getSubComponentNameFromUser = async folderPath => {
 		ignoreFocusOut: true,
 		placeHolder: 'New component name...',
 	});
+	
 	if (!subComponentName || subComponentName.length === 0) {
 		throw new Error('Empty name received');
 	}
@@ -30,6 +31,7 @@ const getSubComponentNameFromUser = async folderPath => {
 	const subComponentFileName = `${subComponentName.replace(/\.js$/, '')}.js`;
 	const subComponentPath = path.join(folderPath, subComponentFileName);
 	const subComponentFileAlreadyExists = await fs.existsSync(subComponentPath);
+	
 	if (subComponentFileAlreadyExists) {
 		throw new Error(`${subComponentFileName} already exists in the current folder`);
 	}
@@ -99,6 +101,7 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 	const codeLines = code.split('\n');
 	const {startIndexForReplacement, endIndexForReplacement} = codeLines.reduce((res, line, lineIndex) => {
 		let newRes = {...res};
+		
 		if (lineIndex < range.start.line) {
 			newRes = {...newRes, startIndexForReplacement: newRes.startIndexForReplacement + line.length + 1};
 		}
@@ -112,6 +115,7 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 			newRes = {...newRes, endIndexForReplacement: newRes.endIndexForReplacement + range.end.character};
 		}
 		return newRes;
+
 	}, {startIndexForReplacement: 0, endIndexForReplacement: 0});
 	
 	return code.substring(0, startIndexForReplacement) +
@@ -121,6 +125,7 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 const addImportToCode = (code, importLine, importIndex) => {
 	const codeLines = code.split('\n');
 	codeLines.splice(importIndex, 0, importLine);
+
 	return codeLines.join('\n');
 };
 
@@ -131,6 +136,7 @@ const getUnusedImportsFromCode = async (code, importEntitiesToIgnore) => {
 	
 	linterResults.forEach(linterResult => {
 		const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
+
 		if (unusedImportEntity && !importEntitiesToIgnore.includes(unusedImportEntity)) {
 			const codeStartingAtImport = [...codeLines].slice(linterResult.line - 1).join('\n');
 			let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
@@ -165,6 +171,7 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 
 	const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
 	const unusedImports = await getUnusedImportsFromCode(replacedOriginalCode, originalUnusedImportEntities);
+	
 	unusedImports.forEach(unusedImport => {
 		const importAlreadyExists = subComponentImports.includes(unusedImport);
 		if (!importAlreadyExists) {
@@ -184,14 +191,17 @@ const generateSubComponentCode = async (editor, selectedCode, subComponentName) 
 		props: subComponentProps, 
 		imports: subComponentImports,
 	});
+
 	return {subComponentCode, subComponentProps};
 };
 
 const createSubComponentFile = async (subComponentPath, code) => {
 	const {workspaceFolders} = vscode.workspace;
+
 	if (!workspaceFolders || workspaceFolders.length === 0) {
 		return new Error('You must add working environment!');
 	}
+	
 	await fs.writeFileSync(subComponentPath, code);
 };
 
