@@ -17,7 +17,7 @@ const getSelectedCode = editor => {
 	return selectedCode;
 };
 
-const getLeadingSpaces = (selectedCode, endToStart = false) => {
+const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
     const selectedCodeLines = selectedCode.split('\n');
     if (endToStart) {
         selectedCodeLines.reverse();
@@ -25,18 +25,18 @@ const getLeadingSpaces = (selectedCode, endToStart = false) => {
 
     const firstCodeLineIndex = selectedCodeLines.findIndex(line =>
         endToStart ? line.match(/^\s*[<|\/>].*$/) : line.match(/^\s*<.*$/));
-    const numberOfLeadingSpaces = selectedCodeLines[firstCodeLineIndex].search(/\S/);
-    return ' '.repeat(numberOfLeadingSpaces);
+    const indexOfFirstSpace = selectedCodeLines[firstCodeLineIndex].search(/\S/);
+    return Math.max(0, indexOfFirstSpace);
 };
 
 const jsxElementsAreAdjacent = selectedCode => !selectedCode.match(/<.*<\/.*>/gs);
 
 const wrapAdjacentJsxElements = selectedCode => {
-    const leadingSpaces = getLeadingSpaces(selectedCode, true);
+    const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode, true);
     const lineIndent = '  ';
     const selectedCodeLinesTrimmed = selectedCode.trim().split('\n');
     const selectedCodeIndentedForWrapping = selectedCodeLinesTrimmed.map((line, i) =>
-        i > 0 ? `${lineIndent}${line.substring(leadingSpaces.length)}` : `${lineIndent}${line}`).join('\n');
+        i > 0 ? `${lineIndent}${line.substring(numberOfLeadingSpaces)}` : `${lineIndent}${line}`).join('\n');
     return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
 };
 
@@ -61,7 +61,8 @@ const validateSelectedCode = async selectedCode => {
 
 const generateSubComponentElement = (selectedCode, subComponentName, subComponentProps) => {
     const formattedProps = subComponentProps.map(prop => `${prop}={${prop}}`);
-    const leadingSpaces = getLeadingSpaces(selectedCode);
+    const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode);
+    const leadingSpaces = ' '.repeat(numberOfLeadingSpaces);
     let propsAndClosing = '/';
     
     if (formattedProps.length > 3) {
@@ -75,8 +76,8 @@ const generateSubComponentElement = (selectedCode, subComponentName, subComponen
 
 const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, subComponentName, subComponentProps) => {
     const subComponentElement = generateSubComponentElement(selectedCode, subComponentName, subComponentProps);
-    const leadingSpaces = getLeadingSpaces(getSelectedCode(editor), true);
-    const leadingSpacesAfterSelectionStart = ' '.repeat(leadingSpaces.length - editor.selection.start.character);
+    const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode);
+    const leadingSpacesAfterSelectionStart = ' '.repeat(numberOfLeadingSpaces);
     await editor.edit(async edit => edit.replace(editor.selection, `${leadingSpacesAfterSelectionStart}${subComponentElement.trim()}`));
 };
 
