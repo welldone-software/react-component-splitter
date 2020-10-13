@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const eslint = require('eslint');
 const eslintPluginReact = require('eslint-plugin-react');
 const eslintPluginUnusedImports = require('eslint-plugin-unused-imports');
@@ -6,7 +7,6 @@ const babelCore = require('@babel/core');
 const babelPresetReact = require('@babel/preset-react');
 const babelPluginProposalOptionalChaining = require('@babel/plugin-proposal-optional-chaining');
 const {parseForESLint} = require('babel-eslint');
-const {compact} = require('lodash');
 
 const linterConfig = {
     parser: parseForESLint,
@@ -29,6 +29,7 @@ const transformCode = async code => {
 const getUndefinedVarsFromCode = async code => {
     const transformedCode = await transformCode(code);
     const linter = new eslint.Linter();	
+    
     linter.defineRule('react/jsx-no-undef', eslintPluginReact.rules['jsx-no-undef']);
     
     const linterResults = linter.verify(transformedCode, {
@@ -38,9 +39,9 @@ const getUndefinedVarsFromCode = async code => {
             'react/jsx-no-undef': 'error',
         },
     });
-    const undefinedVars = compact(linterResults.map(linterResult => extractEntityNameFromLinterResult(linterResult)));
+    const undefinedVars = _.compact(_.map(linterResults, linterResult => extractEntityNameFromLinterResult(linterResult)));
     
-    return undefinedVars.filter((undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
+    return _.filter(undefinedVars, (undefinedVar, i) => undefinedVars.indexOf(undefinedVar) === i);
 };
 
 const getLinterResultsForUnusedImports = async code => {
@@ -63,7 +64,7 @@ const getLinterResultsForUnusedImports = async code => {
 
 const getUnusedImportEntitiesFromCode = async code => {
     const linterResultsForUnusedImports = await getLinterResultsForUnusedImports(code);
-    return compact(linterResultsForUnusedImports.map(linterResult => extractEntityNameFromLinterResult(linterResult)));
+    return _.compact(_.map(linterResultsForUnusedImports, linterResult => extractEntityNameFromLinterResult(linterResult)));
 };
 
 const fixImportsOrder = code => {

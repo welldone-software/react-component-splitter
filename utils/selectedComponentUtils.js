@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const {EOL} = require('os');
 const vscode = require('vscode');
 const babel = require("@babel/core");
@@ -20,13 +21,13 @@ const getSelectedCode = editor => {
 };
 
 const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
-    const selectedCodeLines = selectedCode.split('\n');
+    const selectedCodeLines = _.split(selectedCode, '\n');
     
     if (endToStart) {
-        selectedCodeLines.reverse();
+        _.reverse(selectedCodeLines);
     }
 
-    const firstCodeLineIndex = selectedCodeLines.findIndex(line =>
+    const firstCodeLineIndex = _.findIndex(selectedCodeLines, line =>
         endToStart ? line.match(/^\s*[<|\/>].*$/) : line.match(/^\s*<.*$/));
     const indexOfFirstSpace = selectedCodeLines[firstCodeLineIndex].search(/\S/);
     
@@ -39,7 +40,7 @@ const wrapAdjacentJsxElements = selectedCode => {
     const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode, true);
     const lineIndent = '  ';
     const selectedCodeLinesTrimmed = selectedCode.trim().split('\n');
-    const selectedCodeIndentedForWrapping = selectedCodeLinesTrimmed.map((line, i) =>
+    const selectedCodeIndentedForWrapping = _.map(selectedCodeLinesTrimmed, (line, i) =>
         i > 0 ? `${lineIndent}${line.substring(numberOfLeadingSpaces)}` : `${lineIndent}${line}`).join('\n');
     
     return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
@@ -65,7 +66,7 @@ const validateSelectedCode = async selectedCode => {
 };
 
 const generateSubComponentElement = (selectedCode, subComponentName, subComponentProps) => {
-    const formattedProps = subComponentProps.map(prop => `${prop}={${prop}}`);
+    const formattedProps = _.map(subComponentProps, prop => `${prop}={${prop}}`);
     const numberOfLeadingSpacesFromStart = getNumberOfLeadingSpaces(selectedCode);
     const leadingSpacesFromStart = ' '.repeat(numberOfLeadingSpacesFromStart);
     let propsAndClosing = '/';
@@ -73,10 +74,10 @@ const generateSubComponentElement = (selectedCode, subComponentName, subComponen
     if (formattedProps.length > 3) {
         const numberOfLeadingSpacesFromEnd = getNumberOfLeadingSpaces(selectedCode, true);
         const leadingSpacesFromEnd = ' '.repeat(numberOfLeadingSpacesFromEnd);
-        propsAndClosing = `${EOL}${leadingSpacesFromEnd}  ${formattedProps.join(`${EOL}${leadingSpacesFromEnd}  `)}${EOL}${leadingSpacesFromEnd}/`;
+        propsAndClosing = `${EOL}${leadingSpacesFromEnd}  ${_.join(formattedProps, `${EOL}${leadingSpacesFromEnd}  `)}${EOL}${leadingSpacesFromEnd}/`;
         
     } else if (formattedProps.length > 0) {
-        propsAndClosing = ` ${formattedProps.join(' ')}/`;
+        propsAndClosing = ` ${_.join(formattedProps, ' ')}/`;
     }
     
     return `${leadingSpacesFromStart}<${subComponentName}${propsAndClosing}>`;
@@ -91,10 +92,10 @@ const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, 
 };
 
 const getLineIndexForNewImports = code => {
-    const codeLines = code.split('\n');
-    const firstImportLineIndex = codeLines.findIndex(codeLine => codeLine.match(/^\s*import /));
-    const codeLinesFromFirstImport = firstImportLineIndex > -1 ? [...codeLines].splice(firstImportLineIndex) : codeLines;
-    const indexOfFirstNonImportLine = codeLinesFromFirstImport.findIndex(codeLine => codeLine.match(/^\s*[^i]/)) - 1;
+    const codeLines = _.split(code, '\n');
+    const firstImportLineIndex = _.findIndex(codeLines, codeLine => codeLine.match(/^\s*import /));
+    const codeLinesFromFirstImport = firstImportLineIndex > -1 ? _.slice([...codeLines], firstImportLineIndex) : codeLines;
+    const indexOfFirstNonImportLine = _.findIndex(codeLinesFromFirstImport, codeLine => codeLine.match(/^\s*[^i]/)) - 1;
     
     return Math.max(indexOfFirstNonImportLine, 0);
 };
@@ -111,10 +112,10 @@ const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
     const linterResults = await getLinterResultsForUnusedImports(editor.document.getText());
     
     await editor.edit(async edit => {        
-        linterResults.forEach(linterResult => {
+        _.forEach(linterResults, linterResult => {
             const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
             
-            if (unusedImportEntity && !importEntitiesToIgnore.includes(unusedImportEntity)) {
+            if (unusedImportEntity && !_.includes(importEntitiesToIgnore, unusedImportEntity)) {
                 const codeLine = editor.document.lineAt(linterResult.line - 1);
                 const codeLineText = codeLine.text;
                 const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');

@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const {EOL} = require('os');
 const vscode = require('vscode');
 const fs = require('fs');
@@ -21,7 +22,7 @@ const getSubComponentNameFromUser = async folderPath => {
 		placeHolder: 'New component name...',
 	});
 	
-	if (!subComponentName || subComponentName.length === 0) {
+	if (_.isEmpty(subComponentName)) {
 		throw new Error('Empty name received');
 	}
 	if (!subComponentName.match(/^[A-Z][0-9a-zA-Z_$]*$/g)) {
@@ -30,7 +31,7 @@ const getSubComponentNameFromUser = async folderPath => {
 
 	const subComponentFileName = `${subComponentName.replace(/\.js$/, '')}.js`;
 	const subComponentPath = path.join(folderPath, subComponentFileName);
-	const subComponentFileAlreadyExists = await fs.existsSync(subComponentPath);
+	const subComponentFileAlreadyExists = fs.existsSync(subComponentPath);
 	
 	if (subComponentFileAlreadyExists) {
 		throw new Error(`${subComponentFileName} already exists in the current folder`);
@@ -40,9 +41,9 @@ const getSubComponentNameFromUser = async folderPath => {
 };
 
 const trimAndAlignCode = code => {
-	const lines = code.split('\n');
-	const firstCodeLineIndex = lines.findIndex(line => line.match(/^ *</));
-	const lastCodeLineIndex = lines.length - 1 - [...lines].reverse().findIndex(line => line.match(/^\s*[<|\/>]/));
+	const lines = _.split(code, '\n');
+	const firstCodeLineIndex = _.findIndex(lines, line => line.match(/^ *</));
+	const lastCodeLineIndex = lines.length - 1 - _.findIndex(_.reverse([...lines]), line => line.match(/^\s*[<|\/>]/));
 	const numberOfLeadingSpaces = lines[lastCodeLineIndex].search(/\S/);
 	const leadingSpaces = ' '.repeat(numberOfLeadingSpaces);
 	let formattedCode = lines[firstCodeLineIndex].replace(/^ +/, '');
@@ -51,33 +52,38 @@ const trimAndAlignCode = code => {
 		formattedCode = `${formattedCode}${EOL}  ${lines[i].startsWith(leadingSpaces) ?
 			lines[i].substring(numberOfLeadingSpaces) : lines[i]}`;
 	}
+	
 	if (firstCodeLineIndex !== lastCodeLineIndex) {
 		formattedCode = `${formattedCode}${EOL}  ${lines[lastCodeLineIndex].substring(numberOfLeadingSpaces)}`;
 	}
+
 	return formattedCode;
 };
 
 const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [], imports = []}) => {
 	let importsString = `import React from 'react';${EOL}`;
-	imports.forEach(importLine => {
+	
+	_.forEach(imports, importLine => {
 		importsString = `${importsString}${importLine}${EOL}`;
 	});
 	
 	let propsString = '';
+
 	if (props.length > 2) {
-		propsString = `{${EOL}  ${props.join(`,${EOL}  `)},${EOL}}`;
+		propsString = `{${EOL}  ${_.join(props, `,${EOL}  `)},${EOL}}`;
 	} else if (props.length === 2) {
-		propsString = `{${props.join(', ')}}`;
+		propsString = `{${_.join(props, ', ')}}`;
 	} else if (props.length === 1) {
 		propsString = `{${props[0]}}`;
 	}
 
 	const subComponentCode = `${importsString}${EOL}const ${subComponentName} = (${propsString}) => (${EOL}  ${jsx}${EOL});${EOL}${EOL}export default ${subComponentName};${EOL}`;
+	
 	return fixImportsOrder(subComponentCode);
 }
 
 const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
-	return undefinedVars.reduce((res, undefinedVar) => {
+	return _.reduce(undefinedVars, (res, undefinedVar) => {
 		const importMatch = code.match(`import\\s+(?<leftBrace>{?)[\\s*\\w\\s*,]*\\s*${undefinedVar}\\s*[,?\\s*\\w\\s*]*,?\\s*(?<rightBrace>}?)\\s*from\\s*(?<importLocation>[^\\n;]*)[\\n|;]`);
 		const isDefaultTypeImport = importMatch && importMatch.groups.leftBrace === '' && importMatch.groups.rightBrace === '';
 		
@@ -98,8 +104,8 @@ const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
 };
 
 const replaceRangeOfGivenCode = (code, range, replacement) => {
-	const codeLines = code.split('\n');
-	const {startIndexForReplacement, endIndexForReplacement} = codeLines.reduce((res, line, lineIndex) => {
+	const codeLines = _.split(code, '\n');
+	const {startIndexForReplacement, endIndexForReplacement} = _.reduce(codeLines, (res, line, lineIndex) => {
 		let newRes = {...res};
 		
 		if (lineIndex < range.start.line) {
@@ -123,22 +129,26 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 };
 
 const addImportToCode = (code, importLine, importIndex) => {
-	const codeLines = code.split('\n');
-	codeLines.splice(importIndex, 0, importLine);
+	const codeLines = _.split(code, '\n');
+	const codeLinesWithImport = [
+		..._.slice(codeLines, 0, importIndex),
+		importLine,
+		..._.slice(codeLines, importIndex),
+	];
 
-	return codeLines.join('\n');
+	return _.join(codeLinesWithImport, '\n');
 };
 
 const getUnusedImportsFromCode = async (code, importEntitiesToIgnore) => {
-	const codeLines = code.split('\n');
+	const codeLines = _.split(code, '\n');
 	const unusedImports = [];
 	const linterResults = await getLinterResultsForUnusedImports(code);
 	
 	linterResults.forEach(linterResult => {
 		const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
 
-		if (unusedImportEntity && !importEntitiesToIgnore.includes(unusedImportEntity)) {
-			const codeStartingAtImport = [...codeLines].slice(linterResult.line - 1).join('\n');
+		if (unusedImportEntity && !_.includes(importEntitiesToIgnore, unusedImportEntity)) {
+			const codeStartingAtImport = _.join(_.slice([...codeLines], linterResult.line - 1), '\n');
 			let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
 			importLocation = importLocation.substring(
 				0, Math.min(importLocation.indexOf('\n'), importLocation.indexOf(';'))
@@ -172,8 +182,8 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 	const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
 	const unusedImports = await getUnusedImportsFromCode(replacedOriginalCode, originalUnusedImportEntities);
 	
-	unusedImports.forEach(unusedImport => {
-		const importAlreadyExists = subComponentImports.includes(unusedImport);
+	_.forEach(unusedImports, unusedImport => {
+		const importAlreadyExists = _.includes(subComponentImports, unusedImport);
 		if (!importAlreadyExists) {
 			subComponentImports.push(unusedImport);
 		}
@@ -195,14 +205,14 @@ const generateSubComponentCode = async (editor, selectedCode, subComponentName) 
 	return {subComponentCode, subComponentProps};
 };
 
-const createSubComponentFile = async (subComponentPath, code) => {
+const createSubComponentFile = (subComponentPath, code) => {
 	const {workspaceFolders} = vscode.workspace;
 
-	if (!workspaceFolders || workspaceFolders.length === 0) {
+	if (_.isEmpty(workspaceFolders)) {
 		return new Error('You must add working environment!');
 	}
 	
-	await fs.writeFileSync(subComponentPath, code);
+	fs.writeFileSync(subComponentPath, code);
 };
 
 module.exports = {

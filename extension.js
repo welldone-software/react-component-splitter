@@ -24,7 +24,7 @@ const activate = context => {
 				const subComponentPath = path.join(folderPath, `${subComponentName}.js`);
 				const {subComponentCode, subComponentProps} = await generateSubComponentCode(editor, selectedCode, subComponentName);
 				
-				await createSubComponentFile(subComponentPath, subComponentCode);
+				createSubComponentFile(subComponentPath, subComponentCode);
 				await replaceOriginalCode(editor, selectedCode, subComponentName, subComponentProps);
 			} catch (e) {
 				vscode.window.showErrorMessage(e.message);
