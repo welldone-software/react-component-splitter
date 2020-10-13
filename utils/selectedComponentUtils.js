@@ -66,21 +66,20 @@ const validateSelectedCode = async selectedCode => {
 };
 
 const generateSubComponentElement = (selectedCode, subComponentName, subComponentProps) => {
-    const formattedProps = _.map(subComponentProps, prop => `${prop}={${prop}}`);
     const numberOfLeadingSpacesFromStart = getNumberOfLeadingSpaces(selectedCode);
     const leadingSpacesFromStart = ' '.repeat(numberOfLeadingSpacesFromStart);
-    let propsAndClosing = '/';
+    let propsString = '';
     
-    if (formattedProps.length > 3) {
+    if (subComponentProps.length > 3) {
         const numberOfLeadingSpacesFromEnd = getNumberOfLeadingSpaces(selectedCode, true);
         const leadingSpacesFromEnd = ' '.repeat(numberOfLeadingSpacesFromEnd);
-        propsAndClosing = `${EOL}${leadingSpacesFromEnd}  ${_.join(formattedProps, `${EOL}${leadingSpacesFromEnd}  `)}${EOL}${leadingSpacesFromEnd}/`;
+        propsString = `${EOL}${leadingSpacesFromEnd}  {...{${EOL}${leadingSpacesFromEnd}    ${_.join(subComponentProps, `,${EOL}${leadingSpacesFromEnd}    `)},${EOL}  ${leadingSpacesFromEnd}}}${EOL}${leadingSpacesFromEnd}`;
         
-    } else if (formattedProps.length > 0) {
-        propsAndClosing = ` ${_.join(formattedProps, ' ')}/`;
+    } else if (subComponentProps.length > 0) {
+        propsString = ` {...{${_.join(subComponentProps, ', ')}}}`;
     }
     
-    return `${leadingSpacesFromStart}<${subComponentName}${propsAndClosing}>`;
+    return `${leadingSpacesFromStart}<${subComponentName}${propsString}/>`;
 };
 
 const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, subComponentName, subComponentProps) => {
