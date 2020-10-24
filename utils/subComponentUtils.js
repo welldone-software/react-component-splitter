@@ -80,7 +80,7 @@ const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [],
 	const subComponentCode = `${importsString}${EOL}const ${subComponentName} = (${propsString}) => (${EOL}  ${jsx}${EOL});${EOL}${EOL}export default ${subComponentName};${EOL}`;
 	
 	return fixImportsOrder(subComponentCode);
-}
+};
 
 const sortUndefinedVarsToPropsAndImports = (code, undefinedVars) => {
 	return _.reduce(undefinedVars, (res, undefinedVar) => {
@@ -120,12 +120,11 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 		if (lineIndex === range.end.line) {
 			newRes = {...newRes, endIndexForReplacement: newRes.endIndexForReplacement + range.end.character};
 		}
-		return newRes;
 
+		return newRes;
 	}, {startIndexForReplacement: 0, endIndexForReplacement: 0});
 	
-	return code.substring(0, startIndexForReplacement) +
-		replacement + code.substring(endIndexForReplacement);
+	return `${code.substring(0, startIndexForReplacement)}${replacement}${code.substring(endIndexForReplacement)}`;
 };
 
 const addImportToCode = (code, importLine, importIndex) => {
@@ -147,19 +146,26 @@ const getUnusedImportsFromCode = async (code, importEntitiesToIgnore) => {
 	linterResults.forEach(linterResult => {
 		const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
 
-		if (unusedImportEntity && !_.includes(importEntitiesToIgnore, unusedImportEntity)) {
-			const codeStartingAtImport = _.join(_.slice([...codeLines], linterResult.line - 1), '\n');
-			let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
-			importLocation = importLocation.substring(
-				0, Math.min(importLocation.indexOf('\n'), importLocation.indexOf(';'))
-			);
-			const importLine = codeLines[linterResult.line - 1];
-			const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
-			const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
-
-			const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${importLocation.replace(/"/g, "'")};`;
-			unusedImports.push(formattedImportLine);
+		if (!unusedImportEntity) {
+			return;
 		}
+
+		if (_.includes(importEntitiesToIgnore, unusedImportEntity)) {
+			return;
+		}
+
+		const codeStartingAtImport = _.join(_.slice([...codeLines], linterResult.line - 1), '\n');
+		
+		let importLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
+		importLocation = importLocation.substring(
+			0, Math.min(importLocation.indexOf('\n'), importLocation.indexOf(';'))
+		);
+		const importLine = codeLines[linterResult.line - 1];
+		const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
+		const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
+
+		const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${importLocation.replace(/"/g, "'")};`;
+		unusedImports.push(formattedImportLine);
 	});
 	
 	return unusedImports;
@@ -184,6 +190,7 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 	
 	_.forEach(unusedImports, unusedImport => {
 		const importAlreadyExists = _.includes(subComponentImports, unusedImport);
+		
 		if (!importAlreadyExists) {
 			subComponentImports.push(unusedImport);
 		}
@@ -194,7 +201,9 @@ const generateSubComponentPropsAndImports = async (editor, selectedCode, subComp
 
 const generateSubComponentCode = async (editor, selectedCode, subComponentName) => {
 	const prettierSelectedCode = trimAndAlignCode(selectedCode);
+	
 	const {subComponentProps, subComponentImports} = await generateSubComponentPropsAndImports(editor, prettierSelectedCode, subComponentName);
+	
 	const subComponentCode = fitCodeInsideReactComponentSkeleton({
 		subComponentName,
 		jsx: prettierSelectedCode,

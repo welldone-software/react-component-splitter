@@ -114,19 +114,25 @@ const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
         _.forEach(linterResults, linterResult => {
             const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
             
-            if (unusedImportEntity && !_.includes(importEntitiesToIgnore, unusedImportEntity)) {
-                const codeLine = editor.document.lineAt(linterResult.line - 1);
-                const codeLineText = codeLine.text;
-                const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
-                const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImportEntity}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
-                const isDefaultTypeImport = codeLineText.match(regexForDefaultTypeImport);
-                const isNonDefaultTypeImport = codeLineText.match(regexForNonDefaultTypeImport);
-                
-                if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
-                    edit.delete(codeLine.rangeIncludingLineBreak);
-                } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
-                    edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineAfterUnusedImport>'));
-                }
+            if (!unusedImportEntity) {
+                return;
+            }
+
+            if (_.includes(importEntitiesToIgnore, unusedImportEntity)) {
+                return;
+            }
+
+            const codeLine = editor.document.lineAt(linterResult.line - 1);
+            const codeLineText = codeLine.text;
+            const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
+            const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImportEntity}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
+            const isDefaultTypeImport = codeLineText.match(regexForDefaultTypeImport);
+            const isNonDefaultTypeImport = codeLineText.match(regexForNonDefaultTypeImport);
+            
+            if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
+                edit.delete(codeLine.rangeIncludingLineBreak);
+            } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
+                edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineAfterUnusedImport>'));
             }
         });
     });
