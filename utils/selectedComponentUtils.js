@@ -8,6 +8,7 @@ const {
     extractEntityNameFromLinterResult,
     getLinterResultsForUnusedImports,
     getUnusedImportEntitiesFromCode,
+    transformCode,
 } = require('./linterUtils');
 
 const getSelectedCode = editor => {
@@ -34,7 +35,7 @@ const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
     return Math.max(0, indexOfFirstSpace);
 };
 
-const jsxElementsAreAdjacent = selectedCode => !selectedCode.match(/<.*<\/.*>/gs);
+const checkIfJsxElementsAreAdjacent = selectedCode => !selectedCode.match(/<.*<\/.*>/gs);
 
 const wrapAdjacentJsxElements = selectedCode => {
     const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode, true);
@@ -46,13 +47,13 @@ const wrapAdjacentJsxElements = selectedCode => {
     return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
 };
 
-const validateSelectedCode = async selectedCode => {
-    if (jsxElementsAreAdjacent(selectedCode)) {
+const validateSelectedCode = selectedCode => {
+    if (checkIfJsxElementsAreAdjacent(selectedCode)) {
         const selectedCodeWithWrappingTag = wrapAdjacentJsxElements(selectedCode);
         return validateSelectedCode(selectedCodeWithWrappingTag);
     }
     try {
-        await babel.transformAsync(selectedCode, {
+        babel.transformSync(selectedCode, {
             presets: [babelPresetReact],
             plugins: [[babelPluginProposalOptionalChaining, {loose: true}]],
         });
@@ -91,26 +92,31 @@ const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, 
 };
 
 const getLineIndexForNewImports = code => {
-    const codeLines = _.split(code, '\n');
-    const firstImportLineIndex = _.findIndex(codeLines, codeLine => codeLine.match(/^\s*import /));
-    const codeLinesFromFirstImport = firstImportLineIndex > -1 ? _.slice([...codeLines], firstImportLineIndex) : codeLines;
-    const indexOfFirstNonImportLine = _.findIndex(codeLinesFromFirstImport, codeLine => codeLine.match(/^\s*[^i]/)) - 1;
-    
-    return Math.max(indexOfFirstNonImportLine, 0);
+    const importMatches = code.match(/^\s*import\s+(.|\n)+?from/gm);
+
+    if (_.isEmpty(importMatches)) {
+        return 0;
+    }
+
+    return _.reduce(importMatches, (res, match) =>
+        res + _.split(match, '\n').length, 0)
 };
+    
 
 const addSubComponentImport = async (editor, subComponentName) => {
     const originalCode = editor.document.getText();
     const newImportLineIndex = getLineIndexForNewImports(originalCode);
     const subComponentImportLine = `import ${subComponentName} from './${subComponentName}';${EOL}`;
     
-    await editor.edit(async edit => edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine));
+    await editor.edit(edit => edit.insert(new vscode.Position(newImportLineIndex, 0), subComponentImportLine));
 };
 
 const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
-    const linterResults = await getLinterResultsForUnusedImports(editor.document.getText());
+    const code = editor.document.getText();
+    const codeLines = _.split(code, '\n');
+    const linterResults = getLinterResultsForUnusedImports(code);
     
-    await editor.edit(async edit => {        
+    await editor.edit(edit => {        
         _.forEach(linterResults, linterResult => {
             const unusedImportEntity = extractEntityNameFromLinterResult(linterResult);
             
@@ -122,24 +128,36 @@ const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
                 return;
             }
 
-            const codeLine = editor.document.lineAt(linterResult.line - 1);
-            const codeLineText = codeLine.text;
             const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
             const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImportEntity}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
-            const isDefaultTypeImport = codeLineText.match(regexForDefaultTypeImport);
-            const isNonDefaultTypeImport = codeLineText.match(regexForNonDefaultTypeImport);
-            
-            if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
-                edit.delete(codeLine.rangeIncludingLineBreak);
-            } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
-                edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineAfterUnusedImport>'));
-            }
+
+            const matchingImports = _.reduce(codeLines, (res, line, lineIndex) => {
+                const isDefaultTypeImport = line.match(regexForDefaultTypeImport);
+                const isNonDefaultTypeImport = line.match(regexForNonDefaultTypeImport);
+
+                if (!isDefaultTypeImport && !isNonDefaultTypeImport) {
+                    return res;
+                }
+
+                return [...res, {lineIndex, isDefaultTypeImport, isNonDefaultTypeImport}];
+            }, []);
+
+            matchingImports.forEach(({lineIndex, isDefaultTypeImport, isNonDefaultTypeImport}) => {
+                const codeLine = editor.document.lineAt(lineIndex);
+                const codeLineText = codeLine.text;
+
+                if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
+                    edit.delete(codeLine.rangeIncludingLineBreak);
+                } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
+                    edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineAfterUnusedImport>'));
+                }
+            });
         });
     });
 };
 
 const replaceOriginalCode = async (editor, selectedCode, subComponentName, subComponentProps) => {
-    const originalUnusedImportEntities = await getUnusedImportEntitiesFromCode(editor.document.getText());
+    const originalUnusedImportEntities = getUnusedImportEntitiesFromCode(editor.document.getText());
     await replaceSelectedCodeWithSubComponentElement(editor, selectedCode, subComponentName, subComponentProps);
     await addSubComponentImport(editor, subComponentName);
     await removeUnusedImports(editor, originalUnusedImportEntities);

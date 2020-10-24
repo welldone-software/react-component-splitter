@@ -67,6 +67,7 @@
 	},
 	"dependencies": {
 		"@babel/core": "^7.9.6",
+		"@babel/plugin-proposal-object-rest-spread": "^7.12.1",
 		"@babel/plugin-proposal-optional-chaining": "^7.9.0",
 		"@babel/preset-react": "^7.9.4",
 		"@typescript-eslint/parser": "2.0.0",

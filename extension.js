@@ -17,12 +17,12 @@ const activate = context => {
 		async () => {	
 			try {
 				const editor = vscode.window.activeTextEditor;
-				const selectedCode = await validateSelectedCode(getSelectedCode(editor));
+				const selectedCode = validateSelectedCode(getSelectedCode(editor));
 				const folderPath = path.join(editor.document.uri.fsPath, '..');
 				
 				const subComponentName = await getSubComponentNameFromUser(folderPath);
 				const subComponentPath = path.join(folderPath, `${subComponentName}.js`);
-				const {subComponentCode, subComponentProps} = await generateSubComponentCode(editor, selectedCode, subComponentName);
+				const {subComponentCode, subComponentProps} = generateSubComponentCode(editor, selectedCode, subComponentName);
 				
 				createSubComponentFile(subComponentPath, subComponentCode);
 				await replaceOriginalCode(editor, selectedCode, subComponentName, subComponentProps);
