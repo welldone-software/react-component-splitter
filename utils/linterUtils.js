@@ -96,5 +96,4 @@ module.exports = {
     getLinterResultsForUnusedImports,
     getUndefinedVarsFromCode,
     getUnusedImportEntitiesFromCode,
-    transformCode,
 };

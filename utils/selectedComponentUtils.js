@@ -8,7 +8,6 @@ const {
     extractEntityNameFromLinterResult,
     getLinterResultsForUnusedImports,
     getUnusedImportEntitiesFromCode,
-    transformCode,
 } = require('./linterUtils');
 
 const getSelectedCode = editor => {
