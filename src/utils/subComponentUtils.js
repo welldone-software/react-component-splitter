@@ -22,7 +22,7 @@ const getSubComponentNameFromUser = async folderPath => {
 		placeHolder: 'New component name...',
 	});
 	
-	if (_.isEmpty(subComponentName)) {
+	if (!subComponentName) {
 		throw new Error('Empty name received');
 	}
 	if (!subComponentName.match(/^[A-Z][0-9a-zA-Z_$]*$/g)) {
@@ -42,14 +42,14 @@ const getSubComponentNameFromUser = async folderPath => {
 
 const trimAndAlignCode = code => {
 	const lines = _.split(code, '\n');
-	const firstCodeLineIndex = _.findIndex(lines, line => line.match(/^ *</));
-	const lastCodeLineIndex = lines.length - 1 - _.findIndex(_.reverse([...lines]), line => line.match(/^\s*[<|\/>]/));
+	const firstCodeLineIndex = _.findIndex(lines, line => /^ *</.test(line));
+	const lastCodeLineIndex = _.size(lines) - 1 - _([...lines]).reverse().findIndex(line => /^\s*[<|\/>]/.test(line));
 	const numberOfLeadingSpaces = lines[lastCodeLineIndex].search(/\S/);
-	const leadingSpaces = ' '.repeat(numberOfLeadingSpaces);
-	let formattedCode = lines[firstCodeLineIndex].replace(/^ +/, '');
+	const leadingSpaces = _.repeat(' ', numberOfLeadingSpaces);
+	let formattedCode = _.replace(lines[firstCodeLineIndex], /^ +/, '');
 	
 	for (let i = firstCodeLineIndex + 1; i < lastCodeLineIndex; i++) {
-		formattedCode = `${formattedCode}${EOL}  ${lines[i].startsWith(leadingSpaces) ?
+		formattedCode = `${formattedCode}${EOL}  ${_.startsWith(lines[i], leadingSpaces) ?
 			lines[i].substring(numberOfLeadingSpaces) : lines[i]}`;
 	}
 	
@@ -69,11 +69,11 @@ const fitCodeInsideReactComponentSkeleton = ({subComponentName, jsx, props = [],
 	
 	let propsString = '';
 
-	if (props.length > 2) {
+	if (_.size(props) > 2) {
 		propsString = `{${EOL}  ${_.join(props, `,${EOL}  `)},${EOL}}`;
-	} else if (props.length === 2) {
+	} else if (_.size(props) === 2) {
 		propsString = `{${_.join(props, ', ')}}`;
-	} else if (props.length === 1) {
+	} else if (_.size(props) === 1) {
 		propsString = `{${props[0]}}`;
 	}
 
@@ -111,13 +111,13 @@ const replaceRangeOfGivenCode = (code, range, replacement) => {
 		let newRes = {...res};
 		
 		if (lineIndex < range.start.line) {
-			newRes = {...newRes, startIndexForReplacement: newRes.startIndexForReplacement + line.length + 1};
+			newRes = {...newRes, startIndexForReplacement: newRes.startIndexForReplacement + _.size(line) + 1};
 		}
 		if (lineIndex === range.start.line) {
 			newRes = {...newRes, startIndexForReplacement: newRes.startIndexForReplacement + range.start.character};
 		}
 		if (lineIndex < range.end.line) {
-			newRes = {...newRes, endIndexForReplacement: newRes.endIndexForReplacement + line.length + 1};
+			newRes = {...newRes, endIndexForReplacement: newRes.endIndexForReplacement + _.size(line) + 1};
 		} 
 		if (lineIndex === range.end.line) {
 			newRes = {...newRes, endIndexForReplacement: newRes.endIndexForReplacement + range.end.character};
@@ -155,19 +155,19 @@ const getUnusedImportsFromCode = (code, importEntitiesToIgnore) => {
 			return res;
 		}
 
-		const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`, 'g');
-		const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImportEntity}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`, 'g');
+		const regexForDefaultTypeImport = new RegExp(`^import\\s+${unusedImportEntity}\\s+from\\s+.*$`);
+		const regexForNonDefaultTypeImport = new RegExp(`(?<importLineBeforeUnusedImport>^import\\s+{[\\s*\\w+\\s*,]*\\s*)${unusedImportEntity}\\s*,?\\s*(?<importLineAfterUnusedImport>[\\w+\\s*,?]*\\s*}\\s+from\\s+.*$)`);
 		
-		const importLineIndex = _.findIndex(codeLines, line => line.match(regexForDefaultTypeImport) || line.match(regexForNonDefaultTypeImport));
-		const codeStartingAtImport = _.join(_.slice([...codeLines], importLineIndex), '\n');
+		const importLineIndex = _.findIndex(codeLines, line => (regexForDefaultTypeImport.test(line) || regexForNonDefaultTypeImport.test(line)));
+		const codeStartingAtImport = _([...codeLines]).slice(importLineIndex).join('\n');
 		const codeStartingAtImportLocation = codeStartingAtImport.substring(codeStartingAtImport.indexOf('from'));
 		const importLocation = codeStartingAtImportLocation.substring(
 			0, Math.min(codeStartingAtImportLocation.indexOf('\n'), codeStartingAtImportLocation.indexOf(';'))
 		);
 		
 		const importLine = codeLines[importLineIndex];
-		const isDefaultTypeImport = importLine.match(regexForDefaultTypeImport);
-		const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${importLocation.replace(/"/g, "'")};`;
+		const isDefaultTypeImport = regexForDefaultTypeImport.test(importLine);
+		const formattedImportLine = `import ${isDefaultTypeImport ? unusedImportEntity : `{${unusedImportEntity}}`} ${_.replace(importLocation, /"/g, "'")};`;
 		
 		return [...res, formattedImportLine];
 	}, []);

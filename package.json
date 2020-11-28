@@ -2,8 +2,8 @@
 	"name": "react-component-splitter",
 	"displayName": "React Component Splitter",
 	"description": "Splits long components into shorter, readable subcomponents",
-	"version": "0.35.0",
-	"icon": "images/icon.png",
+	"version": "0.37.0",
+	"icon": "src/assets/icon.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/welldone-software/react-component-splitter"
@@ -32,7 +32,7 @@
 	"activationEvents": [
 		"*"
 	],
-	"main": "./extension.js",
+	"main": "./src/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -79,7 +79,6 @@
 		"fs": "^0.0.1-security",
 		"lodash": "^4.17.15",
 		"os": "^0.1.1",
-		"path": "^0.12.7",
-		"vsce": "^1.75.0"
+		"path": "^0.12.7"
 	}
 }

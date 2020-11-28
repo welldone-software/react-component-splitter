@@ -10,7 +10,7 @@ This extension allows to easily split long React components into sub-components.
 
 **3**. Enter a name for the new sub-component.
 
-![enter image description here](https://raw.githubusercontent.com/welldone-software/react-component-splitter/master/images/example.gif)
+![enter image description here](https://raw.githubusercontent.com/welldone-software/react-component-splitter/master/src/assets/example.gif)
 
 ## Concept & Assumptions:
 

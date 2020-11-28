@@ -28,19 +28,19 @@ const getNumberOfLeadingSpaces = (selectedCode, endToStart = false) => {
     }
 
     const firstCodeLineIndex = _.findIndex(selectedCodeLines, line =>
-        endToStart ? line.match(/^\s*[<|\/>].*$/) : line.match(/^\s*<.*$/));
+        endToStart ? /^\s*[<|\/>].*$/.test(line) : /^\s*<.*$/.test(line));
     const indexOfFirstSpace = selectedCodeLines[firstCodeLineIndex].search(/\S/);
     
     return Math.max(0, indexOfFirstSpace);
 };
 
-const checkIfJsxElementsAreAdjacent = selectedCode => !selectedCode.match(/<.*<\/.*>/gs);
+const checkIfJsxElementsAreAdjacent = selectedCode => !/<.*<\/.*>/gs.test(selectedCode);
 
 const wrapAdjacentJsxElements = selectedCode => {
     const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode, true);
     const lineIndent = '  ';
-    const selectedCodeLinesTrimmed = selectedCode.trim().split('\n');
-    const selectedCodeIndentedForWrapping = _.map(selectedCodeLinesTrimmed, (line, i) =>
+    const selectedCodeLinesTrimmed = _(selectedCode).trim().split('\n').value();
+    const selectedCodeIndentedForWrapping = _(selectedCodeLinesTrimmed).map((line, i) =>
         i > 0 ? `${lineIndent}${line.substring(numberOfLeadingSpaces)}` : `${lineIndent}${line}`).join('\n');
     
     return `<>${EOL}${selectedCodeIndentedForWrapping}${EOL}</>`;
@@ -56,7 +56,7 @@ const validateSelectedCode = selectedCode => {
             presets: [babelPresetReact],
             plugins: [[babelPluginProposalOptionalChaining, {loose: true}]],
         });
-        if (!selectedCode.match(/^\s*<.*>\s*$/s)) {
+        if (!/^\s*<.*>\s*$/s.test(selectedCode)) {
             throw new Error('expected one wrapping element (for example, a wrapping <div>...</div> or any other element for the entire selection)');
         }
         return selectedCode;
@@ -67,15 +67,15 @@ const validateSelectedCode = selectedCode => {
 
 const generateSubComponentElement = (selectedCode, subComponentName, subComponentProps) => {
     const numberOfLeadingSpacesFromStart = getNumberOfLeadingSpaces(selectedCode);
-    const leadingSpacesFromStart = ' '.repeat(numberOfLeadingSpacesFromStart);
+    const leadingSpacesFromStart = _.repeat(' ', numberOfLeadingSpacesFromStart);
     let propsString = '';
     
-    if (subComponentProps.length > 3) {
+    if (_.size(subComponentProps) > 3) {
         const numberOfLeadingSpacesFromEnd = getNumberOfLeadingSpaces(selectedCode, true);
-        const leadingSpacesFromEnd = ' '.repeat(numberOfLeadingSpacesFromEnd);
+        const leadingSpacesFromEnd = _.repeat(' ', numberOfLeadingSpacesFromEnd);
         propsString = `${EOL}${leadingSpacesFromEnd}  {...{${EOL}${leadingSpacesFromEnd}    ${_.join(subComponentProps, `,${EOL}${leadingSpacesFromEnd}    `)},${EOL}  ${leadingSpacesFromEnd}}}${EOL}${leadingSpacesFromEnd}`;
         
-    } else if (subComponentProps.length > 0) {
+    } else if (_.size(subComponentProps) > 0) {
         propsString = ` {...{${_.join(subComponentProps, ', ')}}}`;
     }
     
@@ -85,9 +85,9 @@ const generateSubComponentElement = (selectedCode, subComponentName, subComponen
 const replaceSelectedCodeWithSubComponentElement = async (editor, selectedCode, subComponentName, subComponentProps) => {
     const subComponentElement = generateSubComponentElement(selectedCode, subComponentName, subComponentProps);
     const numberOfLeadingSpaces = getNumberOfLeadingSpaces(selectedCode);
-    const leadingSpacesAfterSelectionStart = ' '.repeat(numberOfLeadingSpaces);
+    const leadingSpacesAfterSelectionStart = _.repeat(' ', numberOfLeadingSpaces);
     
-    await editor.edit(async edit => edit.replace(editor.selection, `${leadingSpacesAfterSelectionStart}${subComponentElement.trim()}`));
+    await editor.edit(async edit => edit.replace(editor.selection, `${leadingSpacesAfterSelectionStart}${_.trim(subComponentElement)}`));
 };
 
 const getLineIndexForNewImports = code => {
@@ -145,9 +145,9 @@ const removeUnusedImports = async (editor, importEntitiesToIgnore) => {
                 const codeLine = editor.document.lineAt(lineIndex);
                 const codeLineText = codeLine.text;
 
-                if (isDefaultTypeImport || (isNonDefaultTypeImport && isNonDefaultTypeImport.length === 1)) {
+                if (isDefaultTypeImport || (isNonDefaultTypeImport && _.size(isNonDefaultTypeImport) === 1)) {
                     edit.delete(codeLine.rangeIncludingLineBreak);
-                } else if (isNonDefaultTypeImport && isNonDefaultTypeImport.length > 1) {
+                } else if (isNonDefaultTypeImport && _.size(isNonDefaultTypeImport) > 1) {
                     edit.replace(codeLine.range, codeLineText.replace(regexForNonDefaultTypeImport, '$<importLineBeforeUnusedImport>$<importLineAfterUnusedImport>'));
                 }
             });
