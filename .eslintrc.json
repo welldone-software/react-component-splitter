@@ -1,20 +1,16 @@
 {
+	"root": true,
 	"env": {
-		"browser": false,
-		"commonjs": true,
-		"es6": true,
-		"jest": true,
 		"node": true
 	},
-	"parser": "babel-eslint",
+	"parser": "@typescript-eslint/parser",
 	"parserOptions": {
-		"ecmaVersion": 2018,
-		"ecmaFeatures": {
-			"jsx": true
-		},
+		"ecmaVersion": 6,
 		"sourceType": "module"
 	},
-	"plugins": ["jest"],
+	"plugins": [
+		"@typescript-eslint"
+	],
 	"rules": {
 		"no-const-assign": "warn",
 		"no-this-before-super": "warn",
@@ -22,6 +18,13 @@
 		"no-unreachable": "warn",
 		"no-unused-vars": "warn",
 		"constructor-super": "warn",
-		"valid-typeof": "warn"
+		"valid-typeof": "warn",
+		"semi": "off",
+        "@typescript-eslint/semi": "error",
+		"no-extra-semi": "warn",
+		"curly": "warn",
+		"quotes": ["error", "single", { "allowTemplateLiterals": true } ],
+		"eqeqeq": "error",
+		"indent": ["warn", "tab", { "SwitchCase": 1 } ]
 	}
 }
