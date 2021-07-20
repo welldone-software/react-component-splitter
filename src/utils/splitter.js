@@ -21,7 +21,7 @@ const validateSelection = () => {
     try { transformCode(`<>${selection}</>`); }
     catch { throw new Error('Invalid selection. Make sure your selection represents a valid React component'); }
 
-    const codeWithoutSelection = replaceByRange(editor.document.getText(), editor.selection, '');
+    const codeWithoutSelection = replaceCodeByRange(editor.document.getText(), editor.selection, '');
 
     try { transformCode(codeWithoutSelection); }
     catch { throw new Error('Invalid selection. Make sure the code remains valid without your selection'); }
@@ -55,39 +55,37 @@ const askForComponentName = async () => {
     return name;
 };
 
-const replaceByRange = (string, range, replaceValue) => {
+const replaceCodeByRange = (code, range, replaceValue) => {
 
-    const lines = _.split(string, '\n');
+    const lines = _.split(code, '\n');
 
     const { startIndex, endIndex } = _.reduce(lines, (res, line, index) => {
-        
-        const newRes = {...res};
-
+                
         if (index < range.start.line) {
-            newRes.startIndex = (newRes.startIndex + _.size(line) + 1);
+            res.startIndex = (res.startIndex + _.size(line) + 1);
         }
 
         if (index === range.start.line) {
-            newRes.startIndex = (res.startIndex + range.start.character);
+            res.startIndex = (res.startIndex + range.start.character);
         }
 
         if (index < range.end.line) {
-            newRes.endIndex = (res.endIndex + _.size(line) + 1);
+            res.endIndex = (res.endIndex + _.size(line) + 1);
         } 
         
         if (index === range.end.line) {
-            newRes.endIndex = (res.endIndex + range.end.character);
+            res.endIndex = (res.endIndex + range.end.character);
         }
 
-        return newRes;
+        return res;
 
     }, { startIndex: 0, endIndex: 0 });
     
-    return `${string.substring(0, startIndex)}${replaceValue}${string.substring(endIndex)}`;
+    return `${code.substring(0, startIndex)}${replaceValue}${code.substring(endIndex)}`;
 
 };
 
-const replaceCode = async ({ reactElement, name }) => {
+const replaceSelection = async ({ reactElement, name }) => {
 
     const editor = vscode.window.activeTextEditor;
     const {document} = editor;
@@ -99,33 +97,40 @@ const replaceCode = async ({ reactElement, name }) => {
     
     await editor.edit(edit => {
         edit.replace(editor.selection, reactElement);
-        edit.insert(new vscode.Position((lastImportIndex + 1), 0), `import ${name} from './${name}';\n`)
+        edit.insert(new vscode.Position((lastImportIndex + 1), 0), `import ${name} from './${name}';\n`);
     });    
 
     eslintAutofix(document.getText(), { filePath: document.uri.fsPath })
         .then(output => {
+
+            if (!output) {
+                return;
+            }
+
             editor.edit(edit => {
                 const fullRange = new vscode.Range(
                     document.positionAt(0),
                     document.positionAt(_.size(document.getText()) - 1),
                 );
                 edit.replace(fullRange, output);
-            });   
+            });
+
         });
     
 };
 
 const generateReactElement = ({ name, props, jsx }) => {
     
+    const numberOfProps = _.size(props);
     const numberOfLeadingSpacesFromStart = getNumberOfLeadingSpaces(jsx);
     const leadingSpacesFromStart = _.repeat(' ', numberOfLeadingSpacesFromStart);
     let propsString = '';
     
-    if (_.size(props) > 3) {
+    if (numberOfProps > 3) {
         const numberOfLeadingSpacesFromEnd = getNumberOfLeadingSpaces(jsx, {endToStart: true});
         const leadingSpacesFromEnd = _.repeat(' ', numberOfLeadingSpacesFromEnd);
         propsString = `\n${leadingSpacesFromEnd}  {...{\n${leadingSpacesFromEnd}    ${_.join(props, `,\n${leadingSpacesFromEnd}    `)},\n  ${leadingSpacesFromEnd}}}\n${leadingSpacesFromEnd}`;
-    } else if (_.size(props) > 0) {
+    } else if (numberOfProps > 0) {
         propsString = ` {...{ ${_.join(props, ', ')} }}`;
     }
     
@@ -154,17 +159,17 @@ const buildImportsString = imports => _.join(imports, '\n');
 
 const buildPropsString = props => {
 
-    const numOfProps = _.size(props);
+    const numberOfProps = _.size(props);
 
-    if (numOfProps > 2) { return `{\n  ${_.join(props, `,\n  `)},\n}`; }
-    if (numOfProps === 2) { return `{${_.join(props, ', ')}}`; }
-    if (numOfProps === 1) { return `{${props[0]}}`; }
+    if (numberOfProps > 2) { return `{\n  ${_.join(props, `,\n  `)},\n}`; }
+    if (numberOfProps === 2) { return `{${_.join(props, ', ')}}`; }
+    if (numberOfProps === 1) { return `{${props[0]}}`; }
 
     return '';
 
 };
 
-const isWrappedWithTags = string => /^\s*<.*>\s*$/s.test(string);
+const isCodeWrappedWithTags = code => /^\s*<.*>\s*$/s.test(code);
 
 const createNewComponent = async componentName => {
 
@@ -177,7 +182,7 @@ const createNewComponent = async componentName => {
             `${buildImportsString(imports)}\n\n` +
 
             `const ${componentName} = (${buildPropsString(props)}) => (\n` +
-                `${isWrappedWithTags(selection) ? selection : `<>\n${selection}\n</>`}\n` +
+                `${isCodeWrappedWithTags(selection) ? selection : `<>\n${selection}\n</>`}\n` +
             `);\n\n` +
 
             `export default ${componentName};\n`,
@@ -189,8 +194,16 @@ const createNewComponent = async componentName => {
         props,
     };
     
-    eslintAutofix(newComponent.code, {filePath: newComponent.path})
-        .then(output => { fs.writeFileSync(newComponent.path, output); });
+    eslintAutofix(newComponent.code, { filePath: newComponent.path })
+        .then(output => {
+
+            if (!output) {
+                return;
+            }
+
+            fs.writeFileSync(newComponent.path, output);
+            
+        });
 
     return newComponent;
 };
@@ -199,6 +212,5 @@ module.exports = {
     createNewComponent,
     askForComponentName,
     validateSelection,
-    replaceByRange,
-    replaceCode,
+    replaceSelection,
 };
