@@ -21,7 +21,7 @@ const validateSelection = () => {
     try { transformCode(`<>${selection}</>`); }
     catch { throw new Error('Invalid selection. Make sure your selection represents a valid React component'); }
 
-    const codeWithoutSelection = replaceCodeByRange(editor.document.getText(), editor.selection, '');
+    const codeWithoutSelection = replaceCodeByRange(editor.document.getText(), editor.selection, '<></>');
 
     try { transformCode(codeWithoutSelection); }
     catch { throw new Error('Invalid selection. Make sure the code remains valid without your selection'); }
