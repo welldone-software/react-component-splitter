@@ -4,7 +4,7 @@ const {
     validateSelection,
     askForComponentName,
     createNewComponent,
-    replaceSelection,
+    updateOriginalComponent,
 } = require('./utils/splitter');
 
 const activate = context => {
@@ -18,7 +18,7 @@ const activate = context => {
                 const newComponentName = await askForComponentName();
                 const newComponent = await createNewComponent(newComponentName);
 
-                await replaceSelection(newComponent);
+                await updateOriginalComponent({ newComponent });
 
             } catch (error) {
                 vscode.window.showErrorMessage(error.message);
