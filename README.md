@@ -22,4 +22,4 @@ This extension allows to easily split long React components into sub-components.
 
 ## Reporting Bugs:
 
-If you find a bug or malfunction, or have any other comments, you can contact us via email: [sahara@welldone-software.com](mailto:sahara@welldone-software.com), or open a github issue (with specific code example).
+If you find a bug or malfunction, or have any other comments, please open a github issue (with specific code example).
