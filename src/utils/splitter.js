@@ -4,26 +4,62 @@ const fs = require('fs');
 const path = require('path');
 const parseUtils = require('./parse');
 
+const replaceCodeByRange = (code, range, replaceValue) => {
+
+  const lines = _.split(code, '\n');
+
+  const { startIndex, endIndex } = _.reduce(lines, (res, line, index) => {
+              
+      if (index < range.start.line) {
+          res.startIndex = (res.startIndex + _.size(line) + 1);
+      }
+
+      if (index === range.start.line) {
+          res.startIndex += range.start.character;
+      }
+
+      if (index < range.end.line) {
+          res.endIndex = (res.endIndex + _.size(line) + 1);
+      }
+      
+      if (index === range.end.line) {
+          res.endIndex += range.end.character;
+      }
+
+      return res;
+
+  }, { startIndex: 0, endIndex: 0 });
+  
+  return `${code.substring(0, startIndex)}${replaceValue}${code.substring(endIndex)}`;
+
+};
+
 const validateSelection = () => {
 
     const editor = vscode.window.activeTextEditor;
     const selection = editor.document.getText(editor.selection);
 
-    try { parseUtils.transformCode(`<>${selection}</>`); }
-    catch { throw new Error('Invalid selection. Make sure your selection represents a valid React component'); }
+    try {
+      parseUtils.transformCode(`<>${selection}</>`);
+    } catch {
+      throw new Error('Invalid selection. Make sure your selection represents a valid React component');
+    }
 
     const codeWithoutSelection = replaceCodeByRange(editor.document.getText(), editor.selection, '<></>');
 
-    try { parseUtils.transformCode(codeWithoutSelection); }
-    catch { throw new Error('Invalid selection. Make sure the code remains valid without your selection'); }
+    try {
+      parseUtils.transformCode(codeWithoutSelection);
+    } catch {
+      throw new Error('Invalid selection. Make sure the code remains valid without your selection');
+    }
 
 };
 
 const buildComponentPath = name => {
 
     const activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
-    const activeDocumentExtension = activeDocumentPath.replace(/(.*)+\.[^\.]+/, '$1');
-    const nameWithoutExtension = name.replace(/\.[^\.]+$/, '');
+    const activeDocumentExtension = activeDocumentPath.replace(/(.*)+\.[^\\.]+/, '$1');
+    const nameWithoutExtension = name.replace(/\.[^\\.]+$/, '');
 
     return path.join(activeDocumentPath, '..', `${nameWithoutExtension}.${activeDocumentExtension}`);
     
@@ -46,36 +82,6 @@ const askForComponentName = async () => {
     return name;
 };
 
-const replaceCodeByRange = (code, range, replaceValue) => {
-
-    const lines = _.split(code, '\n');
-
-    const { startIndex, endIndex } = _.reduce(lines, (res, line, index) => {
-                
-        if (index < range.start.line) {
-            res.startIndex = (res.startIndex + _.size(line) + 1);
-        }
-
-        if (index === range.start.line) {
-            res.startIndex = (res.startIndex + range.start.character);
-        }
-
-        if (index < range.end.line) {
-            res.endIndex = (res.endIndex + _.size(line) + 1);
-        } 
-        
-        if (index === range.end.line) {
-            res.endIndex = (res.endIndex + range.end.character);
-        }
-
-        return res;
-
-    }, { startIndex: 0, endIndex: 0 });
-    
-    return `${code.substring(0, startIndex)}${replaceValue}${code.substring(endIndex)}`;
-
-};
-
 const getFullDocumentRange = document => new vscode.Range(
     document.positionAt(0),
     document.positionAt(_.size(document.getText())),
@@ -89,7 +95,7 @@ const getFirstAndLastImportLineIndexes = codeLines => {
 
     return {firstImportLineIndex, lastImportLineIndex};
 
-}
+};
 
 const replaceSelection = async ({ reactElement, name }) => {
 
@@ -101,7 +107,7 @@ const replaceSelection = async ({ reactElement, name }) => {
     await editor.edit(edit => {
         edit.replace(editor.selection, reactElement);
         edit.insert(new vscode.Position((lastImportLineIndex + 1), 0), `import ${name} from './${name}';\n`);
-    });    
+    });
 
     parseUtils.eslintAutofix(document.getText(), { filePath: document.uri.fsPath })
         .then(output => {
@@ -128,7 +134,7 @@ const removeUnusedImports = async () => {
     const usedImportsString = _.join(parseUtils.getUsedImports(code), '\n');
     const codeWithUsedImports = _.replace(code, importsString, usedImportsString);
 
-    await editor.edit(edit => edit.replace(getFullDocumentRange(document), codeWithUsedImports));    
+    await editor.edit(edit => edit.replace(getFullDocumentRange(document), codeWithUsedImports));
 
     parseUtils.eslintAutofix(document.getText(), { filePath: document.uri.fsPath })
         .then(output => {
@@ -142,7 +148,6 @@ const removeUnusedImports = async () => {
         });
     
 };
-
 
 const updateOriginalComponent = async ({ newComponent }) => {
 
@@ -169,31 +174,13 @@ const generateReactElement = ({ name, props, jsx }) => {
     return `${leadingSpacesFromStart}<${name}${propsString}/>`;
 };
 
-const extractRelevantImportsAndProps = () => {
-
-    const editor = vscode.window.activeTextEditor;
-    const code = editor.document.getText();
-    const selection = editor.document.getText(editor.selection);
-    
-    const selectionAndImports = `
-        ${buildImportsString(parseUtils.getImports(code))}\n
-        export default () => (<>${selection}</>);
-    `;
-
-    return {
-        props: parseUtils.getUndefinedVars(selectionAndImports),
-        imports: parseUtils.getUsedImports(selectionAndImports),
-    };
-
-};
-
 const buildImportsString = imports => _.join(imports, '\n');
 
 const buildPropsString = props => {
 
     const numberOfProps = _.size(props);
 
-    if (numberOfProps > 2) { return `{\n  ${_.join(props, `,\n  `)},\n}`; }
+    if (numberOfProps > 2) { return `{\n  ${_.join(props, ',\n  ')},\n}`; }
     if (numberOfProps === 2) { return `{${_.join(props, ', ')}}`; }
     if (numberOfProps === 1) { return `{${props[0]}}`; }
 
@@ -201,9 +188,30 @@ const buildPropsString = props => {
 
 };
 
+const extractRelevantImportsAndProps = () => {
+
+  const editor = vscode.window.activeTextEditor;
+  const code = editor.document.getText();
+  const selection = editor.document.getText(editor.selection);
+  
+  const selectionAndImports = `
+      ${buildImportsString(parseUtils.getImports(code))}\n
+      export default () => (<>${selection}</>);
+  `;
+
+  return {
+      props: parseUtils.getUndefinedVars(selectionAndImports),
+      imports: parseUtils.getUsedImports(selectionAndImports),
+  };
+
+};
+
 const shouldWrapCodeWithEmptyTag = code => {
-    try { parseUtils.transformCode(code); }
-    catch { return true; }
+    try {
+      parseUtils.transformCode(code);
+    } catch {
+      return true;
+    }
 };
 
 const createNewComponent = async componentName => {
@@ -211,17 +219,22 @@ const createNewComponent = async componentName => {
     const editor = vscode.window.activeTextEditor;
     const selection = editor.document.getText(editor.selection);
     const { imports, props } = extractRelevantImportsAndProps(componentName);
+    
+    const importsString = buildImportsString(imports);
+    const propsString = buildPropsString(props);
+    const jsx = (shouldWrapCodeWithEmptyTag(selection) ? `<>\n${selection}\n</>` : selection);
 
     const newComponent = {
-        code: parseUtils.pretify(
-            `${buildImportsString(imports)}\n\n` +
+        code: parseUtils.pretify(_.template(
+          `<%= importsString %>
 
-            `const ${componentName} = (${buildPropsString(props)}) => (\n` +
-                `${shouldWrapCodeWithEmptyTag(selection) ? `<>\n${selection}\n</>` : selection}\n` +
-            `);\n\n` +
+          const <%= componentName %> = (<%= propsString %>) => (
+            <%= jsx %>
+          );
 
-            `export default ${componentName};\n`,
-        ),
+          export default <%= componentName %>;
+          `,
+        )({ componentName, importsString, propsString, jsx })),
         reactElement: generateReactElement({ name: componentName, props, jsx: selection }),
         imports,
         name: componentName,

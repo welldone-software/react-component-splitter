@@ -65,7 +65,7 @@ const linter = new (
 
         }
     }
-);
+)();
 
 const transformCode = code => transformSync(code, {
     presets: [babelPresetReact],
@@ -102,7 +102,16 @@ const getUndefinedVars = code => {
 
 };
 
-const getUsedImports = (code, options = { transform: true })  => {
+const getImports = (code, options = { transform: true }) => {
+    
+    return _.chain(options?.transform ? transformCode(code) : code)
+        .split('\n')
+        .filter(codeLine => /^\s*import.*from.*/.test(codeLine))
+        .value();
+        
+};
+
+const getUsedImports = (code, options = { transform: true }) => {
 
     const {output} = linter.verifyAndFix(
         options?.transform ? transformCode(code) : code, {
@@ -126,15 +135,6 @@ const pretify = code => {
 
 };
 
-const getImports = (code, options = { transform: true }) => {
-    
-    return _.chain(options?.transform ? transformCode(code) : code)
-        .split('\n')
-        .filter(codeLine => /^\s*import.*from.*/.test(codeLine))
-        .value();
-        
-};
-
 const getNumberOfLeadingSpaces = (code, options = { endToStart: false }) => {
     
     const codeLines = _.split(code, '\n');
@@ -144,7 +144,7 @@ const getNumberOfLeadingSpaces = (code, options = { endToStart: false }) => {
     }
 
     const firstCodeLineIndex = _.findIndex(codeLines, line =>
-        options?.endToStart ? /^\s*[<|\/>].*$/.test(line) : /^\s*<.*$/.test(line));
+        (options?.endToStart ? /^\s*[<|\/>].*$/.test(line) : /^\s*<.*$/.test(line)));
     const firstSpaceIndex = codeLines[firstCodeLineIndex].search(/\S/);
     
     return Math.max(0, firstSpaceIndex);
@@ -172,7 +172,6 @@ const eslintAutofix = (code, { filePath }) => {
     });
 
 };
-
 
 module.exports = {
     eslintAutofix,
