@@ -1,5 +1,4 @@
 const vscode = require('vscode');
-
 const {
     validateSelection,
     askForComponentName,
