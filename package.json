@@ -86,7 +86,7 @@
     "eslint-plugin-unused-imports": "^2.0.0",
     "find-babel-config": "^1.2.0",
     "fs": "^0.0.1-security",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "path": "^0.12.7"
   }
 }
