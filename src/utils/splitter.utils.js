@@ -219,6 +219,7 @@ const createNewComponent = async ({ name: componentName }) => {
 
     const editor = vscode.window.activeTextEditor;
     const selection = editor.document.getText(editor.selection);
+    const componentExtension = _.replace(editor.document.fileName, /^[^\\.]+\.([^\\.]+)$/, '$1');
     const { imports, props } = extractRelevantImportsAndProps(componentName);
 
     const importsString = buildImportsString(imports);
@@ -241,7 +242,7 @@ const createNewComponent = async ({ name: componentName }) => {
         reactElement: generateReactElement({ name: componentName, props, jsx: selection }),
         imports,
         name: componentName,
-        path: path.join(editor.document.uri.fsPath, '..', `${componentName}.js`),
+        path: path.join(editor.document.uri.fsPath, '..', `${componentName}.${componentExtension}`),
         props,
     };
 
