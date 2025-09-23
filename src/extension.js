@@ -1,5 +1,11 @@
 const vscode = require('vscode');
-const {validateSelection, createNewComponent, askForComponentName, replaceCode} = require('./utils/splitter');
+
+const {
+    validateSelection,
+    askForComponentName,
+    createNewComponent,
+    replaceSelection,
+} = require('./utils/splitter');
 
 const activate = context => {
     context.subscriptions.push(vscode.commands.registerCommand(
@@ -12,7 +18,7 @@ const activate = context => {
                 const newComponentName = await askForComponentName();
                 const newComponent = await createNewComponent(newComponentName);
 
-                await replaceCode(newComponent);
+                await replaceSelection(newComponent);
 
             } catch (error) {
                 vscode.window.showErrorMessage(error.message);

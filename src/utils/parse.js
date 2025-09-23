@@ -34,7 +34,7 @@ const linter = new (
                 .keys()
                 .forEach(pluginName => {
                     this.defineRules(_.chain(eslintPlugins[pluginName].rules).keys().reduce((res, ruleId) => {
-                        return {...res, [`${pluginName}/${ruleId}`]: eslintPlugins[pluginName].rules[ruleId]};
+                        return { ...res, [`${pluginName}/${ruleId}`]: eslintPlugins[pluginName].rules[ruleId] };
                     }, {}).value());
                 })
                 .value();
@@ -49,7 +49,7 @@ const linter = new (
             });
 
             return _.chain(lintMessages)
-                .map(({message}) => message.match(/^[^']*'(?<entityName>[^']+)'.*/)?.groups.entityName)
+                .map(({ message }) => message.match(/^[^']*'(?<entityName>[^']+)'.*/)?.groups.entityName)
                 .compact()
                 .uniq()
                 .value();
@@ -115,7 +115,7 @@ const removeUnusedImports = code => {
         },
     });
 
-    return getImports(output, {transform: false});
+    return getImports(output, { transform: false });
 
 };
 
