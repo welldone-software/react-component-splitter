@@ -102,12 +102,10 @@ const getUndefinedVars = code => {
 
 };
 
-const removeUnusedImports = code => {
-
-    const transformedCode = transformCode(code);
+const getUsedImports = (code, options = { transform: true })  => {
 
     const {output} = linter.verifyAndFix(
-        transformedCode, {
+        options?.transform ? transformCode(code) : code, {
         rules: {
             'react/jsx-uses-react': 1,
             'react/jsx-uses-vars': 1,
@@ -132,10 +130,7 @@ const getImports = (code, options = { transform: true }) => {
     
     return _.chain(options?.transform ? transformCode(code) : code)
         .split('\n')
-        .filter(codeLine => {
-            const isImport = /^\s*import.*from.*/.test(codeLine);
-            return isImport;
-        })
+        .filter(codeLine => /^\s*import.*from.*/.test(codeLine))
         .value();
         
 };
@@ -185,7 +180,7 @@ module.exports = {
     getNumberOfLeadingSpaces,
     getUndefinedVars,
     getUnusedVars,
+    getUsedImports,
     pretify,
-    removeUnusedImports,
     transformCode,
 };
