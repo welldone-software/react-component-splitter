@@ -10,7 +10,7 @@ const {
 const activate = context => {
     context.subscriptions.push(vscode.commands.registerCommand(
         'react-component-splitter.split',
-        async () => {    
+        async () => {
             try {
 
                 validateSelection();
