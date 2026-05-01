@@ -3,7 +3,7 @@ const { transformSync } = require('@babel/core');
 const babelPluginProposalObjectRestSpread = require('@babel/plugin-proposal-object-rest-spread');
 const babelPluginProposalOptionalChaining = require('@babel/plugin-proposal-optional-chaining');
 const babelPresetReact = require('@babel/preset-react');
-const { parseForESLint } = require('babel-eslint');
+const { parseForESLint } = require('@babel/eslint-parser');
 const findBabelConfig = require('find-babel-config');
 const { ESLint, Linter } = require('eslint');
 
@@ -17,7 +17,7 @@ const eslintPlugins = {
 const linterConfig = {
     parser: parseForESLint,
     parserOptions: {
-        ecmaFeatures: {jsx: true},
+        ecmaFeatures: { jsx: true },
         ecmaVersion: 2017,
         sourceType: 'module',
     },
@@ -25,11 +25,11 @@ const linterConfig = {
 
 const linter = new (
     class CustomLinter extends Linter {
- 
+
         constructor(...args) {
 
             super(...args);
-            
+
             _.chain(eslintPlugins)
                 .keys()
                 .forEach(pluginName => {
@@ -49,7 +49,7 @@ const linter = new (
             });
 
             return _.chain(lintMessages)
-                .map(({ message }) => message.match(/^[^']*'(?<entityName>[^']+)'.*/)?.groups.entityName)
+                .map(({ message }) => _.get(message.match(/^[^']*'(?<entityName>[^']+)'.*/), 'groups.entityName'))
                 .compact()
                 .uniq()
                 .value();
@@ -76,45 +76,48 @@ const transformCode = code => transformSync(code, {
 }).code;
 
 const getUnusedVars = code => {
-    
+
     const transformedCode = transformCode(code);
 
     return linter.extractEntityNames(
         transformedCode, {
-        rules: {
-            'no-unused-vars': 'error',
-        },
-    });
+            rules: {
+                'no-unused-vars': 'error',
+            },
+        });
 
 };
 
 const getUndefinedVars = code => {
-    
+
     const transformedCode = transformCode(code);
 
     return linter.extractEntityNames(
         transformedCode, {
-        rules: {
-            'react/jsx-no-undef': 'error',
-            'no-undef': 'error',
-        },
-    });
+            rules: {
+                'react/jsx-no-undef': 'error',
+                'no-undef': 'error',
+            },
+        });
 
 };
 
 const getImports = (code, options = { transform: true }) => {
-    
-    return _.chain(options?.transform ? transformCode(code) : code)
+
+    const finalCode = (_.get(options, 'transform') ? transformCode(code) : code);
+
+    return _.chain(finalCode)
         .split('\n')
         .filter(codeLine => /^\s*import.*from.*/.test(codeLine))
         .value();
-        
+
 };
 
 const getUsedImports = (code, options = { transform: true }) => {
 
-    const {output} = linter.verifyAndFix(
-        options?.transform ? transformCode(code) : code, {
+    const finalCode = (_.get(options, 'transform') ? transformCode(code) : code);
+
+    const { output } = linter.verifyAndFix(finalCode, {
         rules: {
             'react/jsx-uses-react': 1,
             'react/jsx-uses-vars': 1,
@@ -130,29 +133,29 @@ const pretify = code => {
 
     return linter.verifyAndFix(
         code, {
-        rules: eslintPlugins.prettier.configs.recommended.rules,
-    }).output;
+            rules: eslintPlugins.prettier.configs.recommended.rules,
+        }).output;
 
 };
 
 const getNumberOfLeadingSpaces = (code, options = { endToStart: false }) => {
-    
+
     const codeLines = _.split(code, '\n');
-    
-    if (options?.endToStart) {
+
+    if (_.get(options, 'endToStart')) {
         _.reverse(codeLines);
     }
 
     const firstCodeLineIndex = _.findIndex(codeLines, line =>
-        (options?.endToStart ? /^\s*[<|\/>].*$/.test(line) : /^\s*<.*$/.test(line)));
+        (_.get(options, 'endToStart') ? /^\s*[<|\\/>].*$/.test(line) : /^\s*<.*$/.test(line)));
     const firstSpaceIndex = codeLines[firstCodeLineIndex].search(/\S/);
-    
+
     return Math.max(0, firstSpaceIndex);
 
 };
 
-const eslintAutofix = (code, { filePath }) => {
-    
+const eslintAutofix = async (code, { filePath }) => {
+
     const { file: babelConfigFilePath } = findBabelConfig.sync(filePath);
 
     const eslint = new ESLint({
