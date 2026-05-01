@@ -49,6 +49,7 @@ const linter = new (
             });
 
             return _.chain(lintMessages)
+                .filter(({ ruleId }) => _.chain(config).get('rules', {}).keys().includes(ruleId).value())
                 .map(({ message }) => _.get(message.match(/^[^']*'(?<entityName>[^']+)'.*/), 'groups.entityName'))
                 .compact()
                 .uniq()
