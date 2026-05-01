@@ -203,6 +203,10 @@ const extractRelevantImportsAndProps = () => {
 
 const shouldWrapCodeWithEmptyTag = code => {
 
+    if (_.startsWith(code, '{')) {
+        return true;
+    }
+
     try {
         parseUtils.transformCode(code);
     } catch {
