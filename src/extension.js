@@ -15,7 +15,7 @@ const activate = context => {
                 validateSelection();
 
                 const newComponentName = await askForComponentName();
-                const newComponent = await createNewComponent(newComponentName);
+                const newComponent = await createNewComponent({ name: newComponentName });
 
                 await updateOriginalComponent({ newComponent });
 

@@ -215,7 +215,7 @@ const shouldWrapCodeWithEmptyTag = code => {
 
 };
 
-const createNewComponent = async componentName => {
+const createNewComponent = async ({ name: componentName }) => {
 
     const editor = vscode.window.activeTextEditor;
     const selection = editor.document.getText(editor.selection);
