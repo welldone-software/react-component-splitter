@@ -45,7 +45,7 @@
         {
           "command": "react-component-splitter.split",
           "group": "1_modification",
-          "when": "editorHasSelection && resourceLangId == javascript"
+          "when": "editorHasSelection && resourceLangId == javascriptreact"
         }
       ]
     }
