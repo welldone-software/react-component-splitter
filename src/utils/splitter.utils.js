@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
 const vscode = require('vscode');
-const parseUtils = require('./parse');
+const parseUtils = require('./parse.utils');
 
 const replaceCodeByRange = (code, range, replaceValue) => {
 
