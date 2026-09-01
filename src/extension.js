@@ -4,7 +4,7 @@ const {
     askForComponentName,
     createNewComponent,
     updateOriginalComponent,
-} = require('./utils/splitter');
+} = require('./utils/splitter.utils');
 
 const activate = context => {
     context.subscriptions.push(vscode.commands.registerCommand(
